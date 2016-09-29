@@ -1,0 +1,1203 @@
+Array
+(
+    [firstname] => George
+    [lastname] => plsek
+)
+Array
+(
+    [pdf] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpC2HYHW
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+)
+Array
+(
+)
+Array
+(
+)
+Array
+(
+<<<<<<< HEAD
+    [file1] => Array
+        (
+            [name] => screening.json
+            [type] => text/plain
+            [tmp_name] => /tmp/phpAkj8fQ
+            [error] => 0
+            [size] => 791
+=======
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/php80hLCX
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpsvk5wc
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpngx3Vs
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpkpOO4l
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/php6pZM5R
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpOmBXxT
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/php8cAOT2
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpeeZJ5M
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => tet
+    [lastname] => tet
+)
+Array
+(
+    [files] => Array
+        (
+            [name] => Array
+                (
+                    [file1] => e9spec.txt
+                )
+
+            [type] => Array
+                (
+                    [file1] => text/plain
+                )
+
+            [tmp_name] => Array
+                (
+                    [file1] => /private/var/tmp/phpCuujaY
+                )
+
+            [error] => Array
+                (
+                    [file1] => 0
+                )
+
+            [size] => Array
+                (
+                    [file1] => 2167
+                )
+
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php6rhBKS
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpPK42c7
+            [error] => 0
+            [size] => 108974
+        )
+
+)
+Array
+(
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpVI5AlL
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpMaVRhC
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpZZhS18
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/php4WL5CV
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpC5uurd
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php1GAH0o
+            [error] => 0
+            [size] => 108974
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpmz3Kx2
+            [error] => 0
+            [size] => 2167
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phphuhJmm
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php3GqOh0
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpkci30x
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpC8m1Wf
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpnhvpJR
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpeg5Bcx
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpLDuHua
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpNSQaon
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpjegM6X
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpifF6Aj
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php2xlkJT
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpJte4qJ
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpY1yeHN
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpucLs7k
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpJLoA5F
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpVHKNcr
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpCDT7a3
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpym7jN2
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpb90szQ
+            [error] => 0
+            [size] => 28691
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpztWred
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpRuNFl6
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php60oDvQ
+            [error] => 0
+            [size] => 28691
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpTYccoz
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpthld9l
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpVVWgze
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpNME5yX
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phprbaiPT
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpBJxk51
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpPTZLuL
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpKbZIYt
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => WTT_logo_2015.jpeg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpO80Cjy
+            [error] => 0
+            [size] => 34020
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpoews9p
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpgd25ko
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => WTT_logo_2015.jpeg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpJTuav3
+            [error] => 0
+            [size] => 34020
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpamOnRj
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpwTR32E
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => WTT_logo_2015.jpeg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpTghjx0
+            [error] => 0
+            [size] => 34020
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpcJxI6R
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phphrplVP
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => WTT_logo_2015.jpeg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpj8mCyj
+            [error] => 0
+            [size] => 34020
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpd0xDbE
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpFZ8QFY
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => WTT_logo_2015.jpeg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpObzAX9
+            [error] => 0
+            [size] => 34020
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpV76Udh
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php7IzJvl
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpZiNLly
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpdWDRCy
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpNKc00h
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpwFk0Q3
+            [error] => 0
+            [size] => 2167
+>>>>>>> 7b5a886716fc113c9b8424a441269f8db6d9a79e
+        )
+
+    [file2] => Array
+        (
+<<<<<<< HEAD
+            [name] => georgeplsekusScreening201512160304080000.pdf
+            [type] => application/octet-stream
+            [tmp_name] => /tmp/phpYLqlKo
+            [error] => 0
+            [size] => 1957790
+=======
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php0pTnOn
+            [error] => 0
+            [size] => 108974
+>>>>>>> 7b5a886716fc113c9b8424a441269f8db6d9a79e
+        )
+
+    [file3] => Array
+        (
+<<<<<<< HEAD
+            [name] => Right_George-Plsek_2015-12-15.jpg
+            [type] => image/jpeg
+            [tmp_name] => /tmp/phpjJLbNa
+            [error] => 0
+            [size] => 267346
+        )
+
+    [file4] => Array
+        (
+            [name] => Front_George-Plsek_2015-12-15.jpg
+            [type] => image/jpeg
+            [tmp_name] => /tmp/phpsdjuIY
+            [error] => 0
+            [size] => 272516
+        )
+
+    [file5] => Array
+        (
+            [name] => Left_George-Plsek_2015-12-15.jpg
+            [type] => image/jpeg
+            [tmp_name] => /tmp/phpxFbWeO
+            [error] => 0
+            [size] => 273359
+        )
+
+    [file6] => Array
+        (
+            [name] => Back_George-Plsek_2015-12-15.jpg
+            [type] => image/jpeg
+            [tmp_name] => /tmp/phpTFcsvF
+            [error] => 0
+            [size] => 269898
+=======
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phprjowgo
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpQIQT3F
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php5BzVdj
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php9oZP0Z
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => test
+    [lastname] => test
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => e9spec.txt
+            [type] => text/plain
+            [tmp_name] => /private/var/tmp/phpj9gNbj
+            [error] => 0
+            [size] => 2167
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpxvaAhN
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpAI82A4
+            [error] => 0
+            [size] => 28691
+>>>>>>> 7b5a886716fc113c9b8424a441269f8db6d9a79e
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => screening.json
+            [type] => application/json
+            [tmp_name] => /private/var/tmp/phpViXpfz
+            [error] => 0
+            [size] => 791
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpcHExBT
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpEmLBoz
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => screening.json
+            [type] => application/json
+            [tmp_name] => /private/var/tmp/phpRxxJyk
+            [error] => 0
+            [size] => 791
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpT3ORkQ
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpdnKU6H
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => screening.json
+            [type] => application/json
+            [tmp_name] => /private/var/tmp/phpuIqjo7
+            [error] => 0
+            [size] => 791
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpYUtvH8
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php23GPRj
+            [error] => 0
+            [size] => 28691
+        )
+
+)
+Array
+(
+    [firstname] => 
+    [lastname] => 
+)
+Array
+(
+    [file1] => Array
+        (
+            [name] => screening.json
+            [type] => application/json
+            [tmp_name] => /private/var/tmp/php895yTN
+            [error] => 0
+            [size] => 791
+        )
+
+    [file2] => Array
+        (
+            [name] => friday2.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/php0vzIxb
+            [error] => 0
+            [size] => 108974
+        )
+
+    [file3] => Array
+        (
+            [name] => life.jpg
+            [type] => image/jpeg
+            [tmp_name] => /private/var/tmp/phpHItCM3
+            [error] => 0
+            [size] => 28691
+        )
+
+)

@@ -1,0 +1,1125 @@
+<?php
+
+function xlog($tag, $msg) {
+    $msg = print_r($msg, true);
+    $today = date("d.m.Y");
+    $filename = "{$tag}_{$today}.txt";
+    if (!file_exists($filename)) {
+        //chmod($filename, 0777);
+    }
+    $fd = fopen($filename, "a+");
+    $str = "[" . date("d/m/Y h:i:s", time()) . "] " . $msg;
+    fwrite($fd, $str . PHP_EOL);
+    fclose($fd);
+    //chmod($filename, 0644);
+}
+
+// Init BrainTree API
+function init_bt() {
+    include_once __DIR__.'/../../../libraries/braintree/lib/Braintree.php';
+    Braintree_Configuration::environment('sandbox');
+    Braintree_Configuration::merchantId('3p9tjcbyfw3qvprq');
+    Braintree_Configuration::publicKey('gywz9t33m798mz55');
+    Braintree_Configuration::privateKey('22d2a72ebca156982ae0775731b6cb91');
+}
+
+function geia_subscriptions_cron() {
+    //xlog('cron', 'run cron job ...');
+    init_bt();
+    // Tracking transaction payments
+    $transactions = db_query("
+        SELECT *
+        FROM geia_transactions
+        WHERE geia_transactions.status = 'submitted_for_settlement'
+        LIMIT 0, 20
+    ", [])->fetchAll();
+    // xlog('cron', 'count = '.count($transactions));
+    // xlog('cron', $transactions);
+    foreach ($transactions as $t) {
+      // xlog('cron', $t);
+      $transaction = Braintree_Transaction::find($t->transaction_id);
+      // xlog('cron', $t->transaction_id);
+      // xlog('cron', $transaction->status);
+      // xlog('cron', $transaction);
+
+      db_update('geia_transactions')->fields([
+        'status' => $transaction->status,
+      ])->condition('id', $t->id, '=')->execute();
+
+      db_update('geia_subscriptions')->fields([
+        'status'       => $transaction->status,
+      ])->condition('id', $t->subscription_id, '=')->execute();
+
+      // TODO: process statuses more specific
+      switch ($transaction->status) {
+          case 'settled': {
+            db_update('geia_subscriptions')->fields([
+              'payment_date' => $transaction->updatedAt->format("Y-m-d H:i:s"),
+            ])->condition('id', $t->subscription_id, '=')->execute();
+            break;
+          }
+
+          // Errors for payment method:
+          case 'authorization_expired':
+          case 'gateway_rejected':
+          case 'failed':
+          case 'processor_declined':
+          case 'settlement_declined': {
+            // We decide that current payment method is wrong and clean this
+            db_update('geia_subscriptions')->fields([
+              'client_payment_type' => null,
+            ])->condition('id', $t->subscription_id, '=')->execute();
+            break;
+          }
+
+          default: {
+            db_update('geia_subscriptions')->fields([
+              'payment_date' => null,
+            ])->condition('id', $t->subscription_id, '=')->execute();
+            break;
+          }
+      }
+      /*
+      db_update('geia_subscriptions')->fields([
+        'status'       => $transaction->status,
+        'payment_date' => ($transaction->status == 'settled')?$transaction->updatedAt->format("Y-m-d H:i:s"):null,
+      ])->condition('id', $t->subscription_id, '=')->execute();
+      //*/
+    }
+
+    // Trying auto payment for subscription
+    $subscriptions = db_query("
+        SELECT
+          geia_subscriptions.*,
+          geia_price_plan.price,
+          geia_price_plan.period
+        FROM geia_subscriptions
+        LEFT JOIN geia_price_plan ON geia_price_plan.id = geia_subscriptions.plan_id
+        WHERE
+            NOT geia_subscriptions.plan_id IS NULL
+        AND NOT geia_subscriptions.payment_date IS NULL
+        AND NOT geia_subscriptions.client_id IS NULL
+        AND NOT geia_subscriptions.client_payment_type IS NULL
+        LIMIT 0, 20
+    ", [])->fetchAll();
+    foreach ($subscriptions as $subscription) {
+      // Check subscription status by date payment, if expired try doing payment
+      if (!empty($subscription->plan_id) && !empty($subscription->payment_date) && strtotime("+".(30*$subscription->period)." day", strtotime($subscription->payment_date)) <= time()) {
+         // xlog('cron', 'subscription expired try doing payment #'.$subscription->id);
+         $amount = $subscription->price*$subscription->period;
+         $transaction = Braintree_Transaction::sale([
+              'amount'             => $amount,
+              'paymentMethodToken' => $subscription->client_payment_type,
+              //'paymentMethodNonce' => 'fake-valid-nonce',
+              'options' => [
+                  'submitForSettlement' => True
+              ],
+              'descriptor' => [
+                  'name' => 'geiafit*subscription',
+                  //'phone' => '3125551212',
+                  'url' => 'geiafit.com'
+              ]
+         ]);
+          db_update('geia_subscriptions')->fields([
+              'status'       => $transaction->status
+          ])->condition('id', $subscription->id, '=')->execute();
+         if ($transaction->success == true) {
+             // Update subscription statement
+             db_update('geia_subscriptions')->fields([
+                 'card_type'            => $transaction->transaction->creditCardDetails->card_type,
+                 'bin'                  => $transaction->transaction->creditCardDetails->bin,
+                 'last_4'               => $transaction->transaction->creditCardDetails->last_4,
+                 'expiration_date'      => $transaction->transaction->creditCardDetails->expirationDate,
+                 'amount'               => $amount,
+                 'status'               => $transaction->transaction->status,
+                 'payment_date'         => null,
+             ])->condition('id', $subscription->id, '=')->execute();
+
+             // Create transaction record for historical purposes
+             db_insert('geia_transactions')
+                 ->fields(array(
+                     'subscription_id'      => $subscription->id,
+                     'transaction_id'       => $transaction->transaction->id,
+                     'card_type'            => $transaction->transaction->creditCardDetails->card_type,
+                     'bin'                  => $transaction->transaction->creditCardDetails->bin,
+                     'last_4'               => $transaction->transaction->creditCardDetails->last_4,
+                     'expiration_date'      => $transaction->transaction->creditCardDetails->expirationDate,
+                     'amount'               => $amount,
+                     'status'               => $transaction->transaction->status,
+                 ))->execute();
+         } else {
+
+         }
+      }
+    }
+
+}
+
+function geia_subscriptions_entity_presave($entity, $type) {
+   if ($type == 'user') {
+       $enterprise_plan = db_query("SELECT * FROM geia_enterprise WHERE geia_enterprise.trainer_id = " . $entity->field_therapist['und'][0]['uid'] . " LIMIT 0, 1", [])->fetchAll();
+       if (!empty($enterprise_plan)) {
+           $used = db_query("SELECT count(DISTINCT entity_id) as c FROM `field_data_field_therapist` where field_therapist_uid = " . $entity->field_therapist['und'][0]['uid'] . " LIMIT 0, 1")->fetchAll();
+           if ($used[0]->c >= $enterprise_plan[0]->user_max) {
+               drupal_set_message(t('Error saving: This trainer already has max ' . $enterprise_plan[0]->user_max . ' patients for free enterprise plan. Rejected.'), 'warning');
+               $entity->field_therapist['und'][0]['uid'] = $entity->original->field_therapist['und'][0]['uid'];
+           }
+       }
+   }
+  return false;
+}
+
+
+
+function geia_subscriptions_menu() {
+    $items = array();
+    $items['admin/subscriptions'] = array(
+        'title' => t('Subscriptions'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'geia_subscriptions_list',
+        'page arguments' => array('form', 'form_state'),
+        'access arguments' => array('administer nodes'),
+    );
+
+    $items['admin/subscriptions/subscriptions'] = array(
+        'title' => t('Subscriptions'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'geia_subscriptions_list',
+        'page arguments' => array('form', 'form_state'),
+        'access arguments' => array('administer nodes'),
+    );
+
+    $items['admin/subscriptions/transactions'] = array(
+        'title' => t('Transactions'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'geia_subscriptions_transactions_list',
+        'page arguments' => array('form', 'form_state'),
+        'access arguments' => array('administer nodes'),
+    );
+
+    $items['admin/subscriptions/options'] = array(
+        'title' => t('Options'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('geia_subscriptions_options'),
+        'access arguments' => array('administer nodes'),
+        'file' => 'geia_subscriptions.admin.inc',
+    );
+
+    $items['admin/subscriptions/plans'] = array(
+        'title'            => t('Price plans'),
+        'type'             => MENU_NORMAL_ITEM,
+        'page callback'    => 'geia_price_plans_list',
+        //'page arguments' => array('geia_subscriptions_options'),
+        'access arguments' => array('administer nodes'),
+        //'file'           => 'geia_subscriptions.admin.inc',
+    );
+
+    $items['admin/subscriptions/plans/edit/%'] = array(
+        'title'           => t('Edit Price plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_price_plan_edit_confirm', 4),
+        'access callback' => TRUE,
+        'type'            => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/subscriptions/plans/delete/%'] = array(
+        'title'           => t('Delete Price plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_price_plan_delete_confirm', 4),
+        'access callback' => TRUE,
+        'type'            => MENU_CALLBACK,
+    );
+
+    $items['admin/subscriptions/plans/create'] = array(
+        'title'           => t('Create Price plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_price_plan_create_confirm'),
+        'access callback' => TRUE,
+        'type'            => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/subscriptions/discounts'] = array(
+        'title'            => t('Discounts'),
+        'type'             => MENU_NORMAL_ITEM,
+        'page callback'    => 'geia_subscriptions_discounts_list',
+        'page arguments'   => array('form', 'form_state'),
+        'access arguments' => array('administer nodes'),
+    );
+
+    $items['admin/subscriptions/discounts/create'] = array(
+        'title'           => t('Create discount'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_discount_create_confirm'),
+        'access callback' => TRUE,
+        'type'            => MENU_NORMAL_ITEM,
+    );
+
+
+    $items['admin/subscriptions/enterprise'] = array(
+        'title'            => t('Enterprise plans'),
+        'type'             => MENU_NORMAL_ITEM,
+        'page callback'    => 'geia_subscriptions_enterprise_list',
+        'page arguments'   => array('form', 'form_state'),
+        'access arguments' => array('administer nodes'),
+    );
+
+    $items['admin/subscriptions/enterprise/create'] = array(
+        'title'           => t('Create enterprise plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_enterprise_create_confirm'),
+        'access callback' => TRUE,
+        'type'            => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/subscriptions/enterprise/edit/%'] = array(
+        'title'           => t('Edit Enterprise plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_subscriptions_enterprise_edit_confirm', 4),
+        'access callback' => TRUE,
+        'type'            => MENU_NORMAL_ITEM,
+    );
+
+    $items['admin/subscriptions/enterprise/delete/%'] = array(
+        'title'           => t('Delete Enterprise plan'),
+        'page callback'   => 'drupal_get_form',
+        'page arguments'  => array('geia_subscriptions_enterprise_delete_confirm', 4),
+        'access callback' => TRUE,
+        'type'            => MENU_CALLBACK,
+    );
+
+
+
+    $sql = "
+    -- DROP TABLE IF EXISTS `geia_subscriptions`;
+    CREATE TABLE IF NOT EXISTS `geia_subscriptions`(
+	 `id` INT NOT NULL AUTO_INCREMENT,
+	 `user_id` INT NOT NULL DEFAULT '0',
+	 `trainer_id` INT NOT NULL DEFAULT '0',
+	 `create_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+	 `client_id` VARCHAR(255) NULL,
+	 `client_payment_type` VARCHAR(100) NULL,
+
+	 `card_type` VARCHAR(100) NULL,
+	 `bin` VARCHAR(100) NULL,
+	 `last_4` VARCHAR(100) NULL,
+	 `expiration_date` VARCHAR(100) NULL,
+	 `amount` FLOAT NOT NULL DEFAULT '0',
+	 `plan_id` INT NULL,
+	 `discount_id` INT NULL,
+	 `status` VARCHAR(100) NULL,
+	 `payment_date` TIMESTAMP NULL,
+	PRIMARY KEY (`id`)
+    ) COLLATE='utf8_general_ci' ENGINE=InnoDB;
+    ";
+    //xlog('log', $sql);
+    db_query($sql);
+
+    $sql = "
+    -- DROP TABLE IF EXISTS `geia_transactions`;
+    CREATE TABLE IF NOT EXISTS `geia_transactions` (
+	  `id` INT NOT NULL AUTO_INCREMENT,
+	  `subscription_id` INT NOT NULL DEFAULT '0',
+	  `transaction_id` VARCHAR(255) NOT NULL DEFAULT '0',
+	  `card_type` VARCHAR(100) NULL,
+	  `bin` VARCHAR(100) NULL,
+	  `last_4` VARCHAR(100) NULL,
+	  `expiration_date` VARCHAR(100) NULL,
+	  `amount` FLOAT NOT NULL DEFAULT '0',
+	  `status` VARCHAR(100) NULL,
+	  `create_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+    ) COLLATE='utf8_general_ci' ENGINE=InnoDB;
+    ";
+    //xlog('log', $sql);
+    db_query($sql);
+
+    $sql = "
+    -- DROP TABLE IF EXISTS `geia_price_plan`;
+    CREATE TABLE IF NOT EXISTS `geia_price_plan` (
+	  `id` INT NOT NULL AUTO_INCREMENT,
+	  -- `name`    VARCHAR(255) NULL,
+	  `price`   FLOAT NOT NULL DEFAULT '0',
+	  `period`  INT NOT NULL DEFAULT '1',
+	  `create_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+    ) COLLATE='utf8_general_ci' ENGINE=InnoDB;
+    ";
+    //xlog('log', $sql);
+    db_query($sql);
+
+    $sql = "
+    -- DROP TABLE IF EXISTS `geia_discounts`;
+    CREATE TABLE IF NOT EXISTS `geia_discounts` (
+	  `id`          INT NOT NULL AUTO_INCREMENT,
+	  `trainer_id`  INT NOT NULL DEFAULT '0',
+	  `code`        VARCHAR(255) NOT NULL,
+	  `percent`     FLOAT NOT NULL DEFAULT '0',
+	  `create_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	  `user_id`     INT NULL,
+	  `used_date`   TIMESTAMP NULL,
+	PRIMARY KEY (`id`)
+    ) COLLATE='utf8_general_ci' ENGINE=InnoDB;
+    ";
+    //xlog('log', $sql);
+    db_query($sql);
+
+
+    $sql = "
+    -- DROP TABLE IF EXISTS `geia_enterprise`;
+    CREATE TABLE IF NOT EXISTS `geia_enterprise` (
+	  `id`          INT NOT NULL AUTO_INCREMENT,
+	  `trainer_id`  INT NOT NULL DEFAULT '0',
+	  `user_max`    INT NOT NULL DEFAULT '0',
+	  `create_date` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`)
+    ) COLLATE='utf8_general_ci' ENGINE=InnoDB;
+    ";
+    //xlog('log', $sql);
+    db_query($sql);
+
+    return $items;
+}
+
+
+// SUBSCRIPTIONS
+function geia_subscriptions_list () {
+    $searchPatient = (string)$_REQUEST['patient'];
+    $searchTrainer = (string)$_REQUEST['trainer'];
+    $searchStatus  = (string)$_REQUEST['status'];
+
+   // xlog('search', $searchPatient);
+   // xlog('search', $searchTrainer);
+   // xlog('search', $searchStatus);
+
+    $header = array('Patient', 'Trainer', 'Price plan $', 'Discount',  'CARD', 'Status', 'Payment Date/Time');
+    // xlog('subscriptions_list', $query->fetch());
+    $query = db_select('geia_subscriptions', 's')->extend('PagerDefault');
+    # get the desired fields from the database
+    $query->fields('s')
+        //->orderBy('last_updated', 'DESC')
+        ->limit(100);
+    $query->leftJoin('users', 'u1', 'u1.uid = s.user_id');
+    $query->addField('u1', 'mail', 'patient');
+    $query->leftJoin('users', 'u2', 'u2.uid = s.trainer_id');
+    $query->addField('u2', 'mail', 'trainer');
+    $query->leftJoin('geia_price_plan', 'p', 'p.id = s.plan_id');
+    $query->addField('p', 'price');
+    $query->addField('p', 'period');
+    $query->leftJoin('geia_discounts', 'd', 'd.id = s.discount_id');
+    $query->addField('d', 'percent');
+
+    if (!empty($searchPatient)) {
+      $query->condition('u1.mail', $searchPatient);
+    }
+
+    if (!empty($searchTrainer)) {
+      $query->condition('u2.mail', $searchTrainer);
+    }
+
+    if (!empty($searchStatus)) {
+      $query->condition('s.status', $searchStatus);
+    }
+
+    # execute the query
+    $results = $query->execute();
+    $rows   = array();
+    foreach ($results as $r) {
+       $rows[] = [
+           $r->patient,
+           $r->trainer,
+           '$'.$r->price.' / month '.(($r->period > 1)?' with '.$r->period.' month subscription':''),
+           $r->percent.'%',
+           'CARD: '.$r->card_type.' '.$r->bin.' ... '.$r->last_4.' '.$r->expiration_date,
+           $r->status,
+           $r->payment_date];
+    }
+    $output = render(drupal_get_form('subscriptions_list_filter_form'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows ));
+    # add the pager
+    $output .= theme('pager');
+    return $output;
+}
+
+function subscriptions_list_filter_form ($form) {
+    $form['patient'] = array(
+        '#title'    => 'Patient',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['trainer'] = array(
+        '#title'    => 'Trainer',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['status'] = array(
+        '#title'    => 'Status',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['submit'] = array(
+        '#type'  => 'submit',
+        '#value' => 'Search',
+    );
+    $form['#redirect'] = FALSE;
+    return $form;
+}
+
+function subscriptions_list_filter_form_submit($form, &$form_state) {
+    $form_state['redirect'] = FALSE;
+}
+
+
+// TRANSACTIONS
+function geia_subscriptions_transactions_list () {
+    $searchPatient = (string)$_REQUEST['patient'];
+    $searchStatus  = (string)$_REQUEST['status'];
+
+
+    $header = array('Subscription', 'Amount $',  'CARD', 'Status', 'Create Date/Time');
+    $query = db_select('geia_transactions', 't')->extend('PagerDefault');
+
+    # get the desired fields from the database
+    $query->fields('t')
+          ->orderBy('create_date', 'DESC')
+          ->limit(100);
+    $query->leftJoin('geia_subscriptions', 's', 's.id = t.subscription_id');
+    $query->leftJoin('users', 'u1', 'u1.uid = s.user_id');
+    $query->addField('u1', 'mail', 'patient');
+
+    if (!empty($searchPatient)) {
+        $query->condition('u1.mail', $searchPatient);
+    }
+    if (!empty($searchStatus)) {
+        $query->condition('t.status', $searchStatus);
+    }
+
+    /*
+    $query->leftJoin('users', 'u2', 'u2.uid = s.trainer_id');
+    $query->addField('u2', 'mail', 'trainer');
+    */
+
+    # execute the query
+    $results = $query->execute();
+    $rows   = array();
+    foreach ($results as $r) {
+        $rows[] = [
+            '#'.$r->subscription_id.' subscription for '.$r->patient,
+            $r->amount,
+            'CARD: '.$r->card_type.' '.$r->bin.' ... '.$r->last_4.' '.$r->expiration_date,
+            $r->status,
+            $r->create_date];
+    }
+
+    $output = render(drupal_get_form('transactions_list_filter_form'));
+    $output .= theme('table', array('header' => $header, 'rows' => $rows ));
+
+    # add the pager
+    $output .= theme('pager');
+    return $output;
+}
+
+function transactions_list_filter_form ($form) {
+    $form['patient'] = array(
+        '#title'    => 'Patient',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['status'] = array(
+        '#title'    => 'Status',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['submit'] = array(
+        '#type'  => 'submit',
+        '#value' => 'Search',
+    );
+    $form['#redirect'] = FALSE;
+    return $form;
+}
+
+function transactions_list_filter_form_submit($form, &$form_state) {
+    $form_state['redirect'] = FALSE;
+}
+
+
+// PRICE PLANS
+function geia_price_plans_list () {
+  $query = db_select('geia_price_plan', 'p')->extend('PagerDefault');
+  $query->fields('p');
+  $results = $query->execute();
+  // xlog('plan', $results);
+  $rows = [];
+  foreach ($results as $r) {
+        $rows[] = [
+           $r->price,
+           $r->period,
+           l(t('Edit'), '/admin/subscriptions/plans/edit/'.$r->id).' | '.
+           l(t('Delete'), '/admin/subscriptions/plans/delete/'.$r->id),
+        ];
+  }
+  $header = array('Price $', 'Period in months', 'Operations');
+  $output = '';
+  $output .= l(t('Create new price plan'), '/admin/subscriptions/plans/create/');
+  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  $output .= theme('pager');
+  return $output;
+}
+
+function geia_price_plan_edit_confirm($form ,&$form_state, $planId) {
+    //xlog('plan', $planId);
+    $plan = db_query("
+        SELECT *
+        FROM geia_price_plan
+        WHERE geia_price_plan.id = ".$planId."
+        LIMIT 0, 1
+    ", [])->fetchAll();
+
+    //xlog('plan', $plan);
+
+    if (!empty($plan)) {
+        $form = array();
+        $form['price'] = array(
+            '#title'         => t('Price'),
+            '#type'          => 'textfield',
+            '#required'      => true,
+            '#default_value' => $plan[0]->price,
+            );
+        $form['period'] = array(
+            '#title'         => t('Period in month'),
+            '#type'          => 'textfield',
+            '#required'      => true,
+            '#default_value' => $plan[0]->period,
+            );
+
+        $form['id'] = array(
+            '#title'         => t('id'),
+            '#type'          => 'hidden',
+            '#default_value' => $plan[0]->id,
+        );
+
+        return confirm_form($form, t('Update ?'),
+            isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/plans",
+            t(''),t('Edit'),t('Cancel'));
+    } else {
+        drupal_set_message('Unknown price plane');
+    }
+}
+
+function geia_price_plan_edit_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $id = $form_state['values']['id'];
+        $price = $form_state['values']['price'];
+        $period = $form_state['values']['period'];
+        /*xlog('plan', $id);
+        xlog('plan', $price);
+        xlog('plan', $period);*/
+        db_update('geia_price_plan')->fields([
+          'price'  => $price,
+          'period' => $period,
+        ])->condition('id', $id, '=')->execute();
+        drupal_set_message(t('Price plan has been updated successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/plans");
+}
+
+function geia_price_plan_delete_confirm($form ,&$form_state, $planId) {
+    $plan = db_query("
+        SELECT *
+        FROM geia_price_plan
+        WHERE geia_price_plan.id = ".$planId."
+        LIMIT 0, 1
+    ", [])->fetchAll();
+    if (!empty($plan)) {
+        $form['id'] = array(
+            '#title'         => t('id'),
+            '#type'          => 'hidden',
+            '#default_value' => $plan[0]->id,
+        );
+        drupal_set_message('You try delete price plan.');
+        return confirm_form($form, t('Are you sure you want to delete Price Plan?'),
+            isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/plans", t('This action cannot be undone.'), t('Delete'), t('Cancel'));
+    } else {
+       drupal_set_message('Unknown price plane');
+    }
+}
+
+function geia_price_plan_delete_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $id = $form_state['values']['id'];
+        $result = db_query("DELETE FROM geia_price_plan where id = ".$id);
+        drupal_set_message(t('Price plan has been deleted successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/plans");
+}
+
+function geia_price_plan_create_confirm($form ,&$form_state) {
+        $form = array();
+        $form['price'] = array(
+            '#title'         => t('Price $'),
+            '#type'          => 'textfield',
+            '#required'      => true,
+            '#default_value' => 100,
+        );
+        $form['period'] = array(
+            '#title'         => t('Period in month'),
+            '#type'          => 'textfield',
+            '#required'      => true,
+            '#default_value' => 1,
+        );
+        return confirm_form($form, t('Create a new price plan ?'),
+            isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/plans",
+            t(''),t('Create'),t('Cancel'));
+}
+
+function geia_price_plan_create_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $price = $form_state['values']['price'];
+        $period = $form_state['values']['period'];
+        db_insert('geia_price_plan')->fields([
+          'price'  => $price,
+          'period' => $period,
+        ])->execute();
+        drupal_set_message(t('Price plan has been created successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/plans");
+}
+
+
+// DISCOUNTS
+function geia_subscriptions_discounts_list () {
+    $searchTrainer = (string)$_REQUEST['trainer'];
+    $searchCode    = (string)$_REQUEST['code'];
+    $searchPercent = (string)$_REQUEST['percent'];
+
+    // xlog('search', $searchPatient);
+    // xlog('search', $searchTrainer);
+    // xlog('search', $searchStatus);
+
+    $header = array('Trainer', 'Discount code',  'Discount %', 'Created Date/Time', 'Who use', 'Used Date/Time');
+    // xlog('subscriptions_list', $query->fetch());
+    $query = db_select('geia_discounts', 'd')->extend('PagerDefault');
+    # get the desired fields from the database
+    $query->fields('d')
+        ->orderBy('create_date', 'DESC')
+        ->limit(100);
+
+    $query->leftJoin('users', 't', 't.uid = d.trainer_id');
+    $query->addField('t', 'mail', 'trainer');
+
+    $query->leftJoin('users', 'u', 'u.uid = d.user_id');
+    $query->addField('u', 'mail', 'user');
+
+    if (!empty($searchTrainer)) {
+      $query->condition('t.mail', $searchTrainer);
+    }
+
+    if (!empty($searchCode)) {
+      $query->condition('code', $searchCode);
+    }
+
+    if (!empty($searchPercent)) {
+      $query->condition('percent', $searchPercent);
+    }
+
+    # execute the query
+    $results = $query->execute();
+    $rows   = array();
+    foreach ($results as $r) {
+        $rows[] = [
+            $r->trainer,
+            $r->code,
+            $r->percent,
+            $r->create_date,
+            $r->user,
+            $r->used_date,
+        ];
+    }
+    $output = '';
+    $output .= render(drupal_get_form('subscriptions_discounts_list_filter_form'));
+    $output .= l(t('Create new discount'), '/admin/subscriptions/discounts/create');
+    $output .= theme('table', array('header' => $header, 'rows' => $rows ));
+    # add the pager
+    $output .= theme('pager');
+    return $output;
+}
+
+function subscriptions_discounts_list_filter_form ($form) {
+    $form['trainer'] = array(
+        '#title'    => 'Trainer',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['code'] = array(
+        '#title'    => 'Discount code',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+
+    $percents = [];
+    $percents[] = 'select discount';
+    for ($p = 1; $p <= 100; $p++) {
+        $percents[$p] = $p;
+    }
+
+    $form['percent'] = array(
+        '#title'    => 'Discount %',
+        '#type'     => 'select',
+        '#required' => false,
+        '#options'  => $percents,
+    );
+    $form['submit'] = array(
+        '#type'  => 'submit',
+        '#value' => 'Search',
+    );
+    $form['#redirect'] = FALSE;
+    return $form;
+}
+
+function subscriptions_discounts_list_filter_form_submit($form, &$form_state) {
+    $form_state['redirect'] = FALSE;
+}
+
+function geia_subscriptions_therapists(){
+    $therapists = array();
+    $query = 'SELECT ur.uid
+	    FROM {users_roles} AS ur
+	    WHERE ur.rid = :rid';
+    $result = db_query($query, array(':rid' => 4));
+    $uids = $result->fetchCol();
+    $pts = user_load_multiple($uids);
+    foreach($pts as $pt){
+      $therapists[$pt->uid] = $pt->name;
+    }
+    return $therapists;
+}
+
+function geia_subscriptions_generate_discount ($salt) {
+  $length = 10;
+  $characters = '0123456789abcdefghijklmnopqrstuvwxyz';
+  $string = '';
+  for ($p = 0; $p < $length; $p++) {
+    $string .= $characters[mt_rand(0, strlen($characters))];
+  }
+  // return crypt($string);
+  // return md5($string.$salt);
+  return substr(md5($string.$salt), 0, 12);
+}
+
+function geia_discount_create_confirm($form ,&$form_state) {
+    $form = array();
+    $users = geia_subscriptions_therapists();
+    // xlog('therapists', geia_subscriptions_therapists());
+    $form['trainer'] = array(
+        '#title'         => t('Trainer'),
+        '#type'          => 'select',
+        '#required'      => true,
+        //'#default_value' => 100,
+        '#options'       => $users,
+    );
+
+    $percents = [];
+    for ($p = 1; $p <= 100; $p++) {
+      $percents[$p] = $p;
+    }
+
+    $form['percent'] = array(
+        '#title'         => t('Discount %'),
+        '#type'          => 'select',
+        '#required'      => true,
+        '#default_value' => 1,
+        '#options'       => $percents,
+    );
+    return confirm_form($form, t('New discount'),
+        isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/discounts",
+        t(''),t('Create'),t('Cancel'));
+}
+
+function geia_discount_create_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $trainer  = $form_state['values']['trainer'];
+        $percent  = $form_state['values']['percent'];
+        db_insert('geia_discounts')->fields([
+            'trainer_id'  => $trainer,
+            'percent'     => $percent,
+            'code'        => geia_subscriptions_generate_discount($trainer),
+        ])->execute();
+        drupal_set_message(t('Discount has been created successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/discounts");
+}
+
+
+// ENTERPRISE PLANS
+function geia_subscriptions_enterprise_list () {
+    $searchTrainer = (string)$_REQUEST['trainer'];
+    $searchUserMax = (string)$_REQUEST['user_max'];
+
+
+    // xlog('search', $searchPatient);
+    // xlog('search', $searchTrainer);
+    // xlog('search', $searchStatus);
+
+    $header = array('Trainer', 'Max patients',  'Created Date/Time', 'Count subscriptions', 'Operations');
+    // xlog('subscriptions_list', $query->fetch());
+    $query = db_select('geia_enterprise', 'e')->extend('PagerDefault');
+    # get the desired fields from the database
+    $query->fields('e')
+          ->orderBy('create_date', 'DESC')
+          ->limit(100);
+
+    $query->leftJoin('users', 't', 't.uid = e.trainer_id');
+    $query->addField('t', 'mail', 'trainer');
+
+    if (!empty($searchTrainer)) {
+      $query->condition('t.mail', $searchTrainer);
+    }
+
+    if (!empty($searchUserMax)) {
+      $query->condition('user_max', $searchUserMax);
+    }
+
+    # execute the query
+    $results = $query->execute();
+    $rows   = array();
+    foreach ($results as $r) {
+        $used = db_query("SELECT count(DISTINCT entity_id) as c FROM `field_data_field_therapist` where field_therapist_uid = ".$r->trainer_id." LIMIT 0, 1")->fetchAll();
+        //xlog('enterprise', $used);
+        $rows[] = [
+            $r->trainer,
+            $r->user_max,
+            $r->create_date,
+            $used[0]->c,
+            l(t('Edit'), '/admin/subscriptions/enterprise/edit/'.$r->id).' | '.
+            l(t('Delete'), '/admin/subscriptions/enterprise/delete/'.$r->id),
+        ];
+    }
+    $output = '';
+    $output .= render(drupal_get_form('subscriptions_enterprise_list_filter_form'));
+    $output .= l(t('Create new enterprise plan'), '/admin/subscriptions/enterprise/create');
+    $output .= theme('table', array('header' => $header, 'rows' => $rows ));
+    # add the pager
+    $output .= theme('pager');
+    return $output;
+}
+
+function subscriptions_enterprise_list_filter_form ($form) {
+    $form['trainer'] = array(
+        '#title'    => 'Trainer',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+    $form['user_max'] = array(
+        '#title'    => 'Max patients',
+        '#type'     => 'textfield',
+        '#required' => false,
+    );
+
+
+    $form['submit'] = array(
+        '#type'  => 'submit',
+        '#value' => 'Search',
+    );
+    $form['#redirect'] = FALSE;
+    return $form;
+}
+
+function subscriptions_enterprise_list_filter_form_submit($form, &$form_state) {
+    $form_state['redirect'] = FALSE;
+}
+
+function geia_subscriptions_enterprise_edit_confirm($form ,&$form_state, $enterpriseId) {
+    //xlog('plan', $planId);
+    $plan = db_query("
+        SELECT *
+        FROM geia_enterprise
+        WHERE geia_enterprise.id = ".$enterpriseId."
+        LIMIT 0, 1
+    ", [])->fetchAll();
+
+    //xlog('plan', $plan);
+
+    if (!empty($plan)) {
+        $form = array();
+        $users = geia_subscriptions_therapists();
+        $form['trainer'] = array(
+            '#title'         => t('Trainer'),
+            '#type'          => 'select',
+            '#required'      => true,
+            '#default_value' => $plan[0]->trainer_id,
+            '#options'       => $users,
+        );
+
+        $form['user_max'] = array(
+            '#title'         => t('Max patients'),
+            '#type'          => 'textfield',
+            '#required'      => true,
+            '#default_value' => $plan[0]->user_max,
+            //'#options'       => $percents,
+        );
+
+        $form['id'] = array(
+            '#title'         => t('id'),
+            '#type'          => 'hidden',
+            '#default_value' => $plan[0]->id,
+        );
+
+        return confirm_form($form, t('Update ?'),
+            isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/enterprise",
+            t(''),t('Edit'),t('Cancel'));
+    } else {
+        drupal_set_message('Unknown enterprise plane', 'error');
+    }
+}
+
+function geia_subscriptions_enterprise_edit_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $id       = $form_state['values']['id'];
+        $trainer  = $form_state['values']['trainer'];
+        $user_max = $form_state['values']['user_max'];
+
+
+        $plan = db_query("
+          SELECT *
+          FROM geia_enterprise
+          WHERE
+               geia_enterprise.trainer_id = ".$trainer."
+           AND geia_enterprise.id <> ".$id."
+          LIMIT 0, 1
+        ", [])->fetchAll();
+        if (!empty($plan)) {
+          drupal_set_message(t('This trainer already has the enterprise plane. Rejected.'), 'warning');
+          return;
+        }
+        $used = db_query("SELECT count(DISTINCT entity_id) as c FROM `field_data_field_therapist` where field_therapist_uid = ".$trainer." LIMIT 0, 1")->fetchAll();
+        if ($user_max < $used[0]->c) {
+          drupal_set_message(t('This trainer already has '.$used[0]->c.' patients. Rejected.'), 'warning');
+          return;
+        }
+
+
+        db_update('geia_enterprise')->fields([
+            'trainer_id'  => $trainer,
+            'user_max'    => $user_max,
+        ])->condition('id', $id, '=')->execute();
+        drupal_set_message(t('Enterprise plan has been updated successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/enterprise");
+}
+
+function geia_subscriptions_enterprise_delete_confirm($form ,&$form_state, $enterpriseId) {
+    $plan = db_query("
+        SELECT *
+        FROM  geia_enterprise
+        WHERE geia_enterprise.id = ".$enterpriseId."
+        LIMIT 0, 1
+    ", [])->fetchAll();
+    if (!empty($plan)) {
+        $form['id'] = array(
+            '#title'         => t('id'),
+            '#type'          => 'hidden',
+            '#default_value' => $plan[0]->id,
+        );
+        drupal_set_message('You try delete enterprise plan.');
+        return confirm_form($form, t('Are you sure you want to delete Enterprise Plan?'),
+            isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/enterprise", t('This action cannot be undone.'), t('Delete'), t('Cancel'));
+    } else {
+        drupal_set_message('Unknown enterprise plane', 'error');
+    }
+}
+
+function geia_subscriptions_enterprise_delete_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $id = $form_state['values']['id'];
+        $result = db_query("DELETE FROM geia_enterprise where id = ".$id);
+        drupal_set_message(t('Enterprise plan has been deleted successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/enterprise");
+}
+
+function geia_subscriptions_enterprise_therapists(){
+    $therapists = array();
+    $query = '
+        SELECT ur.uid
+	    FROM {users_roles} AS ur
+	    WHERE ur.rid = :rid';
+    $result = db_query($query, array(':rid' => 4));
+    $uids = $result->fetchCol();
+    // xlog('enterprise', $uids);
+    $enterprises_trainers = db_query("select trainer_id from geia_enterprise")->fetchCol();
+    // xlog('enterprise', $enterprises_trainers);
+    $trainers = [];
+    foreach ($uids as $uid) {
+      if (!in_array($uid, $enterprises_trainers)) {
+        $trainers[] = $uid;
+      }
+    }
+    //xlog('enterprise', $trainers);
+    $pts = user_load_multiple($trainers);
+    foreach ($pts as $pt) {
+      $therapists[$pt->uid] = $pt->name;
+    }
+    return $therapists;
+}
+
+function geia_enterprise_create_confirm($form ,&$form_state) {
+    $form = array();
+    $users = geia_subscriptions_enterprise_therapists();
+    // xlog('therapists', geia_subscriptions_therapists());
+    $form['trainer'] = array(
+        '#title'         => t('Trainer'),
+        '#type'          => 'select',
+        '#required'      => true,
+        //'#default_value' => 100,
+        '#options'       => $users,
+    );
+
+    /*$percents = [];
+    for ($p = 1; $p <= 100; $p++) {
+        $percents[$p] = $p;
+    }*/
+
+    $form['user_max'] = array(
+        '#title'         => t('Max patients'),
+        '#type'          => 'textfield',
+        '#required'      => true,
+        '#default_value' => 10,
+        //'#options'       => $percents,
+    );
+    return confirm_form($form, t('New enterprise plan'),
+        isset($_GET['destination']) ? $_GET['destination'] : "/admin/subscriptions/enterprise",
+        t(''),t('Create'),t('Cancel'));
+}
+
+function geia_enterprise_create_confirm_submit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+        $trainer   = $form_state['values']['trainer'];
+        $user_max  = $form_state['values']['user_max'];
+        db_insert('geia_enterprise')->fields([
+            'trainer_id'  => $trainer,
+            'user_max'    => $user_max,
+        ])->execute();
+        drupal_set_message(t('Enterprise has been created successfully.'));
+    }
+    drupal_goto("/admin/subscriptions/enterprise");
+}
+
+
+
+
+
+/*
+  function geia_subscriptions_install() {
+    //	drupal_install_schema('MYMODULE');
+    xlog('log', 'geia_subscriptions_install');
+}
+
+function geia_subscriptions_uninstall() {
+    // drupal_uninstall_schema('MYMODULE');
+    xlog('log', 'geia_subscriptions_uninstall');
+}
+//*/
+
+
+

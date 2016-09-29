@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Geia API feature.
+ */
+
+include_once 'geia_api.features.inc';

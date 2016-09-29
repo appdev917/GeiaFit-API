@@ -1,0 +1,15 @@
+<?php 
+
+function geia_pt_update_7000() {
+    $field = array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => true,
+        'default' => 1,
+    ); 
+    db_add_field('drupalchat_msg', 'is_new', $field);
+}
+
+function geia_pt_update_7001() {
+    module_enable(array('features_diff'));
+}

@@ -1,0 +1,3467 @@
+<?php
+
+
+/**
+* Implementation of hook_menu
+*/
+
+function geia_pt_menu() {
+	$items['pt/dashboard'] = array(
+		'title' => t('PT Dashboard'),
+		'page callback' => 'geia_pt_dashboard',
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_NORMAL_ITEM,
+		'weight' => 0,
+	); 
+    $items['pt/profile'] = array(
+        'title' => t('Manage profile'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('geia_pt_therapist_profile_form'),
+        'access callback' => 'geia_pt_access',
+        'type' => MENU_NORMAL_ITEM,
+		'weight' => 1,
+    );
+    $items['pt/addpatient'] = array(
+        'title' => t('Add patient'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('geia_pt_therapist_add_newpatient'),
+        'access callback' => 'geia_pt_access',
+        'type' => MENU_NORMAL_ITEM,
+		'weight' => 2,
+    );
+	$items['test'] = array(
+		'title' => t('PT Dashboard'),
+		'page callback' => 'geia_pt_draw_posture',
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 0,
+	); 
+	$items['admin/newpatient'] = array(
+		'title' => t('Add New Patient'),
+		'page callback' => 'geia_pt_add_newpatient',
+		'page arguments' => array(1),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	);  
+	$items['pt/patient/%/characteristics'] = array(
+		'title' => t('Characteristics'),
+		'page callback' => 'geia_pt_patient_characteristics',
+		'page arguments' => array(1),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['pt/patient/%/messages'] = array(
+		'title' => t('Messages'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' =>  array('geia_pt_patient_chat_form'),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['pt/patient/%/activity_goals'] = array(
+		'title' => t('Set Goals - Activity'),
+		'page callback' => 'geia_pt_patient_set_goals',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	); 
+	$items['pt/patient/%/nutrition_goals'] = array(
+		'title' => t('Set Goals - Nutrition'),
+		'page callback' => 'geia_pt_patient_set_nutrition_goals',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	); 
+	$items['pt/patient/%/webex'] = array(
+		'title' => t('Set Exercise Program'),
+		'page callback' => 'geia_pt_patient_webexercises',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['pt/patient/%/webex/%/delete'] = array(
+		'page callback' => 'geia_pt_patient_webexercises_delete',
+		'page arguments' => array(2, 4),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['pt/patient/%/activity_log'] = array(
+		'title' => t('Logs - Activity Log'),
+		'page callback' => 'geia_pt_patient_log_activity',
+		'page arguments' => array(1),
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 7,
+	); 
+	$items['pt/patient/%/nutrition_log'] = array(
+		'title' => t('Logs - Nutrition Log'),
+		'page callback' => 'geia_pt_patient_log_nutrition',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 8,
+	); 
+	$items['pt/patient/%/edit'] = array(
+		'title' => t('Edit patient'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('geia_pt_editpatient_form', 2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+	); 
+	$items['pt/patient/%/threshold'] = array(
+		'title' => t('Set Thresholds'),
+		'page callback' => 'geia_pt_patient_treshold',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 2,
+	); 
+	$items['pt/patient/%/posture-data'] = array(
+		'title' => t('Posture'),
+		'page callback' => 'geia_pt_patient_posture',
+		'page arguments' => array(2),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 2,
+	);         
+	$items['pt/patient/%/posture-data/%'] = array(
+		'title' => t('Posture'),
+		'page callback' => 'geia_pt_patient_posture',
+		'page arguments' => array(2, 4),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 2,
+	);         
+	$items['pt/patient/posture-image/%/%'] = array(
+		'title' => t('Posture Image'),
+		'page callback' => 'geia_pt_patient_posture_image',
+		'page arguments' => array(3, 4),
+		'access callback' => 'geia_pt_access',
+		'type' => MENU_LOCAL_TASK,
+		'weight' => 2,
+	);      
+
+	return $items;
+}
+
+
+function geia_pt_access(){
+	global $user;
+	
+	if (in_array('administrator', $user->roles) || in_array('therapist', $user->roles)) {
+		
+		if (arg(0) == 'pt' && is_numeric(arg(2))) {
+			$pid = arg(2);
+			$patient = user_load($pid);
+			if($patient->field_therapist['und'][0]['uid'] <> $user->uid){
+				return FALSE;
+			}
+			
+			
+		}
+		
+		return TRUE;
+	   }else{
+		return FALSE;
+	}
+	
+return true;
+}
+
+
+/**
+ * Implements hook_user_login().
+ */
+function geia_pt_user_login(&$edit, $account) {
+	// Do not redirect when the user is resetting her password.
+	if (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset') {
+	
+		if (in_array('therapist', $account->roles)) {
+			
+			if(arg(0) != 'api'){
+				drupal_goto('/pt/dashboard');
+			}
+			
+			
+		}else{
+			return;
+		}
+	
+		
+	}else{
+		return;
+	}
+}
+
+
+function geia_pt_theme() {
+	return array(
+		'pt_dashboard' => array(
+			'template' => 'includes/pt_dashboard',
+			'arguments' => array('data' => NULL),
+		),
+		'pt_patient_nav' => array(
+			'template' => 'includes/pt_patient_nav',
+			'arguments' => array('data' => NULL),
+		),
+		'pt_exercises' => array(
+			'template' => 'includes/pt_exercises',
+			'arguments' => array('data' => NULL),
+		),
+		'pt_posture' => array(
+			'template' => 'includes/pt_posture',
+			'arguments' => array('links' => array(), 'posture' => null, 'form' => array()),
+		),
+		'pt_posture_image' => array(
+			'template' => 'includes/pt_posture_image',
+			'arguments' => array('image_type' => null, 'form' => array()),
+		),
+		'pt_vitals' => array(
+			'template' => 'includes/pt_vitals',
+			'arguments' => array('params' => array()),
+		),
+		'pt_activities' => array(
+			'template' => 'includes/pt_activities',
+			'arguments' => array('today' => array()),
+		),
+	);
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function geia_pt_block_info() {
+  $blocks = array();
+  $blocks['geia_pt_patient_nav'] = array(
+	'info' => t('Custom Pt Patient Nav'),
+  );
+
+  return $blocks;
+}
+function geia_pt_block_view($delta = '') {
+	$block = array();
+	switch ($delta) {
+	case 'geia_pt_patient_nav':
+		  $block['subject'] = '';
+		  $block['content'] =  geia_pt_patient_nav();
+		  break;
+	  }
+	 return $block;
+}
+
+function geia_pt_patient_nav(){
+	
+	
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$pid = arg(2);
+	}else{
+		return;
+	}
+	$data = array(
+		'uid' => $pid,
+	);
+	return theme('pt_patient_nav', $data);
+}
+
+
+function geia_pt_dashboard(){
+	
+	global $user;
+
+	$user = user_load($user->uid);
+	
+	$data = _get_patient_data($user);
+	
+
+    //print_r($data);die();
+
+	return theme('pt_dashboard',$data);
+
+}
+
+
+
+
+
+function _get_patient_data($user){
+	$patients = array();
+	$query = 'SELECT ur.entity_id
+	    FROM {field_data_field_therapist} AS ur
+	    WHERE ur.field_therapist_uid = '.$user->uid;
+		
+
+	  $result = db_query($query);
+	  $uids = $result->fetchCol();
+	  
+	  $pusers = user_load_multiple($uids);
+	  //if(count($pusers == 0)){
+	  	
+		 // return "Please contact your Geiafit Admin to add patients to your account";
+	 // }
+	  
+	  foreach($pusers as $patient){
+		 $patient_data = array();
+		 $paccount = profile2_load_by_user($patient,'main');
+		 $patient_data['uid'] = $patient->uid;
+		 $patient_data['fname'] = $paccount->field_first_name['und'][0]['value'];
+		 $patient_data['lname'] = $paccount->field_last_name['und'][0]['value'];
+		 if(isset($paccount->field_profile_image['und'])){
+		 	$patient_data['image_uri'] = $paccount->field_profile_image['und'][0]['uri'];
+		 }else{
+		 	$patient_data['image_uri'] = 'public://default_images/avatar_0.png';
+		 }
+		 $data = _patient_access($patient->uid);
+		 
+		 $activity= $data['activity'];
+		 $chracteristics = $data['chracteristics'];
+		 
+		 $weekly_exercise_total = geia_pt_get_patients_exercises($patient->uid);
+		 if($weekly_exercise_total > 0){
+			 
+			 $patient_data['weekly_ex'] = $weekly_exercise_total;
+			 $ex7 = geia_pt_get_patients_ex_count($patient->uid,7);
+			 $ex30 = geia_pt_get_patients_ex_count($patient->uid,30);
+		     $patient_data['ex7'] = ($ex7/$weekly_exercise_total)*100;
+			 $monthTot = $weekly_exercise_total*30;
+		 	 $patient_data['ex30'] = ($ex30/$monthTot)*100;
+		 	
+		 }else{
+		     $patient_data['ex7'] = 0;
+		 	 $patient_data['ex30'] = 0;
+			
+		 }
+		 
+         
+		 
+		 if(isset($activity)){
+			 $patient_data['last_accessed'] = date('m-d-Y H:i:s',(int)$activity['updated']);
+			 if($activity['total_steps_goal'] != 0){
+			 	$exercise = ($activity['total_steps']/$activity['total_steps_goal'])*100;
+			 }else{
+			 	$exercise = 100;
+			 }
+			 
+			 $low = $activity['time_active_low'];
+			 $lowg = $activity['time_active_low_goal'];
+			 if($lowg != 0){
+			 	 $patient_data['low'] = ((int)$low/(int)$lowg)*100;
+			 }else{
+				 $patient_data['low'] = 100;
+			 }
+			 $medium = $activity['time_active_medium'];
+			 $mediumg = $activity['time_active_medium_goal'];
+			 if($mediumg != 0){
+			 	$patient_data['medium'] = ((int)$medium/(int)$mediumg)*100;
+			 }else{
+			 	$patient_data['medium'] = 100;
+			 }
+			 $high = $activity['time_active_high'];
+			 $highg = $activity['time_active_high_goal'];
+			 if($highg != 0){
+			 	$patient_data['high'] = ((int)$high/(int)$highg)*100;
+			 }else{
+			 	$patient_data['high'] = 100;
+			 }
+			 
+
+		 }else{
+		 	 $patient_data['last_accessed'] = 'NA';
+			 $exercise = 0;
+			 $patient_data['high'] = 0;
+			 $patient_data['medium'] = 0;
+			 $patient_data['low'] = 0;
+		 }
+		 
+		 
+		 if(isset($chracteristics)){
+			  $emotion = $chracteristics['emotion']*100;
+			  $patient_data['vitals_entered'] = date('m-d-Y',(int)$chracteristics['date_created']);
+			   
+		 }else{
+		 	 $patient_data['vitals_entered'] = 'NA';
+			 $emotion = 0;
+		 }
+		 
+		 
+		 
+		
+		 $patient_data['exercise'] = $exercise;
+		 $patient_data['emotion'] = $emotion;
+		 
+		 if($emotion < 50){
+		 	$patient_data['pie_color'] = 'red';
+		 }else if(($emotion > 50) && ($emotion < 75)){
+		 	$patient_data['pie_color'] = 'yellow';
+		 }else{
+		 	$patient_data['pie_color'] = 'green';
+		 }
+		
+         $patients[] = $patient_data;
+	  }
+	
+	
+	
+	$account = profile2_load_by_user($user,'main');
+	$data = array(
+		'fname' => $account->field_first_name['und'][0]['value'],
+		'lname' => $account->field_last_name['und'][0]['value'],
+	);
+	$data['patients'] =  $patients;
+
+    $query = db_select('drupalchat_msg', 'msg')
+        ->fields('msg')
+        ->condition('uid2', $user->uid)
+        ->condition('is_new', 1)
+        ->groupBy('uid1');
+    $query->addExpression("COUNT('uid1')", 'unread_messages');
+    $result = $query->execute();	
+
+    $unread_messages = array();
+    while ($row = $result->fetchAssoc()) {
+        $unread_messages[$row['uid1']] = $row['unread_messages'];
+    }
+
+    foreach ($data['patients'] as $key => $patient) {
+        $data['patients'][$key]['unread_messages'] = isset($unread_messages[$patient['uid']]) ? $unread_messages[$patient['uid']] : 0;
+    }
+	
+	return $data;
+}
+
+
+function _patient_access($uid){
+	
+
+	$query = db_select('activity_logs', 'a');
+	$query->fields('a');
+	$query->condition('a.uid',$uid,'=');
+	$query->orderBy('a.date', 'DESC');//ORDER BY created
+	$query->range(0,1);
+	$result = $query->execute();
+
+	while($record = $result->fetchAssoc()) {
+		$activity =  $record;
+	}
+	
+	$query = db_select('characteristics', 'a');
+	$query->fields('a');
+	$query->condition('a.uid',$uid,'=');
+	$query->orderBy('a.record_date', 'DESC');//ORDER BY created
+	$query->range(0,1);
+	$result = $query->execute();
+
+	$data = array(
+		'activity' => null,
+		'chracteristics' => null,
+	);
+	
+	while($record = $result->fetchAssoc()) {
+		$characteristics =  $record;
+	}
+	if(isset($activity)){
+		$data['activity'] = $activity;
+	}
+	
+	if(isset($characteristics)){
+		$data['chracteristics'] = $characteristics;
+	}
+	
+	return $data;
+}
+
+
+function geia_pt_add_newpatient() {
+   $reg_form = drupal_get_form('geia_pt_newpatient_form');
+   $output = drupal_render($reg_form);
+   return $output;
+}
+
+
+function geia_pt_therapist_add_newpatient($form, &$form_state){
+	global $user;
+	
+    $form['firstname'] = array(
+        '#title' => t('First Name'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['lastname'] = array(
+        '#title' => t('Last Name'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['email'] = array(
+        '#title' => t('Email'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['password'] = array(
+        '#title' => t('Password'),
+		'#description' => t('If left blank the system will generate a random password'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+    );
+    $form['send_mail'] = array(
+        '#title' => t('Notify user of new account'),
+		'#description' => t('Will send user a new patient welcome email'),
+        '#type'=> 'checkbox',
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('SUBMIT'),
+    );
+	
+	$form['therapist'] = array(
+		'#type' => 'hidden',
+		'#value' => $user->uid,
+	);
+
+    return $form;
+	
+}
+
+function geia_pt_get_therapists(){
+	$therapists = array();
+	$query = 'SELECT ur.uid
+	    FROM {users_roles} AS ur
+	    WHERE ur.rid = :rid';
+	  $result = db_query($query, array(':rid' => 4));
+	  $uids = $result->fetchCol();
+	  
+	  $pts = user_load_multiple($uids);
+	  
+	  foreach($pts as $pt){
+	  	$therapists[$pt->uid] = $pt->name;
+		
+	  }
+	  
+	  return $therapists;
+	
+}
+
+
+function geia_pt_newpatient_form($form, &$form_state) {
+	$therapists = geia_pt_get_therapists();
+    $form = array();
+
+    $form['therapist'] = array(
+        '#title' => t('Therapist'),
+        '#type'=> 'select',
+        '#options' => $therapists,
+        '#required' => true,
+    );
+
+	$form['amount'] = array(
+		'#title' => t('Amount $'),
+		'#type'=> 'textfield',
+		'#size' => 20,
+		'#required' => true,
+		'#default_value' => 0,
+	);
+    
+    $form['firstname'] = array(
+        '#title' => t('First Name'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['lastname'] = array(
+        '#title' => t('Last Name'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['email'] = array(
+        '#title' => t('Email'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+        '#required' => true,
+    );
+    $form['password'] = array(
+        '#title' => t('Password'),
+		'#description' => t('If left blank the system will generate a random password'),
+        '#type'=> 'textfield',
+        '#size' => 20,
+    );
+    $form['send_mail'] = array(
+        '#title' => t('Notify user of new account'),
+		'#description' => t('Will send user a new patient welcome email'),
+        '#type'=> 'checkbox',
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('SUBMIT'),
+    );
+
+    return $form;
+}
+
+function geia_pt_newpatient_form_validate($form, &$form_state) {
+    $email = $form_state['values']['email'];
+    // if (!valid_email_address($email)) {
+//         form_set_error('email', t('Please enter a valid email address.'));
+//     }
+    $user = user_load_by_mail($email);
+    if ($user) {
+        form_set_error('email', t('User with this email already exists'));
+    }
+}
+
+function geia_pt_newpatient_form_submit($form, &$form_state) {
+    //global $user;
+
+    $values = $form_state['values'];
+    if($values['password'] == ''){
+    	 $pass = bin2hex(openssl_random_pseudo_bytes(6));
+    }else{
+    	$pass = $values['password'];
+    }
+   
+    
+    $fields = array(
+        'name' => $values['email'],
+        'mail' => $values['email'],
+        'init' => $values['email'],
+        'pass' => $pass,
+        'status' => 1,
+        'roles' => array(
+            DRUPAL_AUTHENTICATED_RID => 'authenticated user',
+			5 => 'patient'
+        ),
+    ); 
+    $account = user_save(null, $fields);
+    $account = user_load($account->uid);
+
+    $account->field_therapist[LANGUAGE_NONE][0]['uid'] = $values['therapist'];
+    $account = user_save($account);
+	
+	
+	$pt = user_load($values['therapist']);
+	
+
+    $profile = profile2_create(array('type' => 'main', 'uid' => $account->uid));
+    $profile->field_first_name[LANGUAGE_NONE][0]['value'] = $values['firstname'];
+    $profile->field_last_name[LANGUAGE_NONE][0]['value'] = $values['lastname'];
+	$profile->field_amount[LANGUAGE_NONE][0]['value'] = $values['amount'];
+
+
+
+    $patient_id = generateRandomString();
+    $profile->field_webex_patient_id['und']['0']['value'] = $patient_id;
+    profile2_save($profile);
+
+    $data['profile'] = $profile;
+    $data['account'] = $account;
+    $data['patient_id'] = $patient_id;
+    $webex_url = create_webexercise_account($data);
+    $profile->field_webex_url['und'][0]['value'] = $webex_url;
+    profile2_save($profile);
+
+    drupal_set_message(t('User: @firstname @lastname was added, email to the patient was sent', array(
+        '@firstname' => $values['firstname'],
+        '@lastname' => $values['lastname'],
+    )));
+	
+	if($values['send_mail'] == 1){
+		
+	    drupal_mail('geia_pt', 'account_created', $account->mail, user_preferred_language($account), array(
+	        'firstname' => $values['firstname'],
+	        'lastname' => $values['lastname'],
+	        'email' => $values['email'],
+	        'password' => $fields['pass'],
+	    ));
+
+
+	    drupal_mail('geia_pt', 'patient_account_created', $pt->mail, user_preferred_language($account), array(
+	        'firstname' => $values['firstname'],
+	        'lastname' => $values['lastname'],
+	        'email' => $values['email'],
+	        'password' => $fields['pass'],
+	    ));
+		
+	}
+
+   
+	
+}
+
+function geia_pt_editpatient_form($form, &$form_state, $uid) {
+    if (($user = user_load($uid)) === false) {
+        drupal_not_found();
+    }
+
+    $profile = profile2_load_by_user($user, 'main');
+
+    $first_name = field_get_items('profile2', $profile, 'field_first_name');
+    $last_name = field_get_items('profile2', $profile, 'field_last_name');
+    $phone = field_get_items('profile2', $profile, 'field_phone');
+    $image = field_get_items('profile2', $profile, 'field_profile_image');
+
+    $form = array();
+    
+    $form['first_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('First Name'),
+        '#default_value' => empty($first_name) ? '' : $first_name[0]['safe_value'],
+    );
+    $form['last_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Last Name'),
+        '#default_value' => empty($last_name) ? '' : $last_name[0]['safe_value'],
+    );
+    $form['email'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Email'),
+        '#default_value' => $user->name,
+        '#required' => true,
+    );
+    $form['password'] = array(
+        '#type' => 'password',
+        '#title' => t('Password'),
+    );    
+
+    $form['profile_image'] = array(
+        '#type' => 'fieldset',
+    );
+    $form['profile_image']['image'] = array(
+        '#type' => 'file',
+        '#title' => t('Profile image'),
+    );
+    if (!empty($image)) {
+        $form['profile_image']['image']['#suffix'] = theme_image_style(array(
+            'style_name' => 'thumbnail',
+            'path' => $image[0]['uri'],
+            'width' => null,
+            'height' => null,
+        ));
+    }
+
+    field_attach_form('profile2', $profile, $form, $form_state, null, array('field_name' => 'field_total_gems'));
+    field_attach_form('profile2', $profile, $form, $form_state, null, array('field_name' => 'field_goals'));
+    unset($form['redirect']);
+    
+    $form['uid'] = array(
+        '#type' => 'hidden',
+        '#value' => $uid,        
+    );
+
+	$form['amount'] = array(
+		'#title' => t('Amount $'),
+		'#type'=> 'textfield',
+		'#size' => 20,
+		'#required' => true,
+		'#default_value' => 0,
+	);
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save profile'),
+        '#weight' => 10,
+    );
+
+    return $form;
+}
+
+function geia_pt_editpatient_form_validate($form, &$form_state) {
+    $values = $form_state['values'];
+    if (($user = user_load($values['uid'])) === false) {
+        drupal_not_found();
+    }
+
+    if ($values['email'] != $user->name) {
+        if (!valid_email_address($values['email'])) {
+            form_set_error('email', t('The e-mail address %email is not valid.', array('%email' => $values['email'])));
+        }
+
+        $uid = db_select('users')
+            ->fields('users', array('uid'))
+            ->condition('name', $values['email'], '=')
+            ->range(0, 1)
+            ->execute()
+            ->fetchField();
+        if ((bool) $uid) {
+            form_set_error('email', t('The e-mail address %email is already taken.', array('%email' => $values['email'])));
+        }
+    }
+}
+
+function geia_pt_editpatient_form_submit($form, &$form_state) {
+    $values = $form_state['values'];
+    if (($user = user_load($values['uid'])) === false) {
+        drupal_not_found();
+    }
+
+    $user->name = $values['email'];
+    $user->mail = $values['email'];
+    if (!empty($values['password'])) {
+        module_load_include('inc', 'content', 'includes/password');
+        $user->pass = user_hash_password($values['password']);
+    }
+    user_save($user);
+
+    $profile = profile2_load_by_user($user, 'main');
+    $profile->field_first_name[LANGUAGE_NONE][0]['value'] = $values['first_name'];
+    $profile->field_last_name[LANGUAGE_NONE][0]['value'] = $values['last_name'];
+
+    $file = file_save_upload('image', array(), 'public://');
+    if (!empty($file)) {
+        $profile->field_profile_image[LANGUAGE_NONE][0] = (array) $file;
+    }
+	
+	
+	
+	if($values['field_total_gems']['und'][0] == ''){
+		$gems = 0;
+	}else{
+		$gems = $values['field_total_gems']['und'][0];
+	}
+
+    $profile->field_total_gems = $gems;
+    $profile->field_goals = $values['field_goals'];
+
+    profile2_save($profile);
+
+    drupal_set_message(t('Patient profile has been saved.'));
+}
+
+
+//mail finction to notify of new account_created
+function geia_pt_mail($key, &$message, $params) {
+    switch ($key) {
+        case 'account_created':
+	    $body = variable_get('new_patient_email','');
+		$new_patient = $body['value'];
+        $langcode = $message['language']->language;
+		
+	    $headers = array(
+	      'MIME-Version' => '1.0',
+	      'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+	      'Content-Transfer-Encoding' => '8Bit',
+	      'X-Mailer' => 'Drupal'
+	    );
+	    foreach ($headers as $key => $value) {
+	      $message['headers'][$key] = $value;
+	    }
+		
+		
+            $langcode = $message['language']->language;
+            $message['subject'] = t('Welcome to the GeiaFit Pilot Program');
+            $message['body'][] = t($new_patient, array(
+                '@firstname' => $params['firstname'],
+                '@lastname' => $params['lastname'],
+                '@email' => $params['email'],
+                '@password' => $params['password'],
+            ), array('langcode' => $langcode));
+            break;
+	        case 'patient_account_created':
+	            $langcode = $message['language']->language;
+	            $message['subject'] = t('New patient was added');
+	            $message['body'][] = t("Your new patient: @firstname @lastname Email: @email was added to the portal. Please login to http://app.geiafit.com to set up their exercise prescription, activity goals and set their threshold.\n\n -geiafit team", array(
+	                '@firstname' => $params['firstname'],
+	                '@lastname' => $params['lastname'],
+	                '@email' => $params['email'],
+	                '@password' => $params['password'],
+	            ), array('langcode' => $langcode));
+	            break;
+    }
+}
+
+
+
+
+function geia_pt_patient_characteristics($uid){
+	$char_form = drupal_get_form('geia_pt_patient_characteristics_form');
+	
+	$output = drupal_render($char_form);
+	return $output;
+	
+}
+
+function geia_pt_get_vital_params($uid, $days) {
+    $params = array(
+        'series' => array(
+            'emotion' => array('label' => t('Emotion'), 'data' => array()), 
+            'bp' => array('label' => t('Blood Pressure'), 'data' => array()),
+            'fat' => array('label' => t('Body Fat'), 'data' => array()),
+            'bmi' => array('label' => t('BMI'), 'data' => array()),
+            'hr' => array('label' => t('Resting Heart Rate'), 'data' => array()),
+            'height' => array('label' => t('Height'), 'data' => array()),
+            'weight' => array('label' => t('Weight'), 'data' => array()),
+        ),
+        'ticks' => array(),
+    );
+        
+    $query = db_select('characteristics', 'c');
+    $query->fields('c');
+    $query->condition('c.uid', $uid, '=');
+    $query->condition('record_date', array(strtotime("-{$days} day"), time()), 'BETWEEN');
+    $result = $query->execute();
+    
+    $i = 0;
+    while ($record = $result->fetchAssoc()) {
+        $params['series']['weight']['data'][] = array($i, $record['weight']);
+        $params['series']['height']['data'][] = array($i, $record['height']);
+        $params['series']['hr']['data'][] = array($i, $record['resting_heart_rate']);
+        $params['series']['bmi']['data'][] = array($i, $record['bmi']);
+        $params['series']['fat']['data']['data'][] = array($i, $record['body_fat']);
+        $params['series']['bp']['data'][] = array($i, $record['blood_pressure_sys']);
+        $params['series']['emotion']['data'][] = array($i, $record['emotion'] * 100);
+        $params['ticks'][] = array($i, gmdate("m-d-Y", $record['record_date']));
+        $i++;
+    }
+
+    $n = (int) floor(count($params['ticks']) / 6);
+    foreach ($params['ticks'] as $key => $value) {
+        if ($key % $n != 0) {
+            unset($params['ticks'][$key]);
+        }
+    }
+    $params['ticks'] = array_values($params['ticks']);
+    
+    return $params;
+}
+
+function geia_pt_patient_characteristics_form($form, &$form_state) {
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+        
+        $params = array(
+            7 => geia_pt_get_vital_params($uid, 7),
+            30 => geia_pt_get_vital_params($uid, 30),
+        );
+        
+		drupal_add_js(array('vital_params' => $params), 'setting'); 
+	    $modpath = drupal_get_path('module', 'geia_pt');
+	    drupal_add_js($modpath.'/js/vitals_chart.js', array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+	
+		$form['#prefix'] = '<div id="newpatient-form" class="pt-forms"><h2>Patient Characteristics</h2>';
+		$form['#suffix'] = '</div>';
+    
+		$form['chart'] = array(
+			'#markup' => theme('pt_vitals', array('params' => $params)),
+		);
+        
+		$form['response'] = array(
+			'#type' => 'item',
+			'#markup' => '<div id="form-register-message"></div>',
+			'#prefix' => '<div class="col-xs-36">',
+			'#suffix' => '</div>',
+		);
+		$form['weight'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Weight','class' => array('form-control')),
+		);
+		$form['height'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Height','class' => array('form-control')),
+		);
+		$form['bmi'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'BMI','class' => array('form-control')),
+		
+		);
+		$form['hr'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Heart Rate','class' => array('form-control')),
+		);
+		$form['bfat'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Body Fat %','class' => array('form-control')),
+		);
+		$form['bloodpres'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Blood Pressure S/D','class' => array('form-control')),
+		);
+		$form['emotion'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Emotion 0-100','class' => array('form-control')),
+		);
+		$form['uid'] = array(
+	        '#value' => $uid,
+		    '#type' => 'hidden',
+		);
+			
+		$form['submit'] = array(
+			'#type' => 'submit',
+			'#value' => t('SUBMIT'),
+			"#attributes" => array("CLASS"=>"button_medium add_top"),
+			'#suffix' => '</div></div>',
+		);
+	}
+	
+	return $form;
+}
+
+function geia_pt_patient_characteristics_form_submit($form, &$form_state){
+    $values = $form_state['values'];
+
+	$query = db_select('characteristics', 'c');
+	$query->fields('c');
+	$query->condition('c.uid', $values['uid'], '=');
+	$query->where('from_unixtime(record_date, \'%Y-%m-%d\') = CURDATE()');
+	$result = $query->execute();
+   
+    $id = 0;
+	while ($record = $result->fetchAssoc()) {
+		$id = $record['id'];
+	}
+	
+	$precord = array();
+	if (trim($values["weight"]) != ''){
+		$precord['weight'] = $values["weight"];
+	}
+	
+	if (trim($values["height"]) != ''){
+		$precord['height'] = $values["height"];
+	}
+	
+	if (trim($values["bfat"]) != ''){
+		$precord['body_fat'] = $values["bfat"];
+	}
+	
+	if (trim($values["emotion"]) != ''){
+		$precord['emotion'] = $values["emotion"]/100;
+	}
+	
+	if (trim($values["bmi"]) != ''){
+		$precord['bmi'] = $values["bmi"];
+	}
+	
+	if (trim($values["bloodpres"]) != ''){
+		$bloodpres = $values['bloodpres'];
+		$bp = explode('/',$bloodpres);
+		$precord['blood_pressure_sys'] = $bp[0];
+		$precord['blood_pressure_dia'] = $bp[1];
+	}
+	
+	$precord['record_date'] = time();
+	$precord['date_created'] = time();
+    $precord['uid'] = $values['uid'];
+
+	// $record = array (
+	// 	"uid" => $uid,
+	// 	"weight" => $weight,
+	// 	"height" => $height,
+	// 	"body_fat" => $bfat,
+	// 	"emotion" => $emotion,
+	// 	"bmi" => $bmi,
+	// 	"resting_heart_rate" => $form_state ["values"]["hr"],
+	// 	"blood_pressure_sys" => $bp[0],
+	// 	"blood_pressure_dia" => $bp[1],
+	// 	"record_date" => time(),
+	// 	"date_created" => time(),
+	// 	//"date_updated" => time(),
+	//
+	// 	);
+    
+	if ($id == 0) {
+        $id = db_insert('characteristics')
+		  ->fields($precord)
+		  ->execute();
+	
+        watchdog('characteristics', "ID  = " . $id);
+	} else {
+		$id = db_update('characteristics')
+		  ->fields($precord)
+		  ->condition('id',$id,'=')
+		  ->execute();
+        watchdog('updated characteristics', "ID  = " . $id);
+	}
+	
+}
+
+function geia_pt_patient_chat_form($form, &$form_state){
+    include_once DRUPAL_ROOT . '/sites/all/modules/custom/geia_services/resources/messages.inc';
+    global $user;
+    
+    if (arg(0) == 'pt' && is_numeric(arg(2))) {
+        $data = array();
+        $pid = arg(2);
+        $patient = user_load($pid);
+        $profile = profile2_load_by_user($patient,'main');
+        $patient_name = $profile->field_first_name['und'][0]['value'].' '.$profile->field_last_name['und'][0]['value']." ";
+    }
+    
+    if ($pid == $user->uid) {
+        //select patient
+        drupal_set_message("Select your patient 1st then click messages");
+        drupal_goto('/user/'.$user->uid.'/my-patients');
+    }
+    
+    $rows = array();
+    $header = array('Author','Message');
+    $data = array_reverse(geia_services_messages_index($pid,0000000000));
+	
+	_mark_messages_as_read($pid);
+    
+    foreach ($data as $message) {
+        if ($message['uid1'] == $user->uid) {
+            $author = "Me ";
+        } else {
+            $author = $patient_name;
+        }
+        
+        $conversation = array(
+            $author.gmdate("m-d-Y h:m",$message['timestamp']).': ',
+            $message['message'],
+        );
+        
+        $rows[] = $conversation;
+    }
+    
+
+    $form['#prefix'] = '<div id="patientchat-form" class="col-sm-12"><h2>Patient Chat</h2>';
+    $form['#suffix'] = '</div>';
+    
+    $form['response'] = array(
+        '#type' => 'item',
+        '#markup' => '<div id="form-chat-message"></div>',
+        '#prefix' => '<div class="">',
+        '#suffix' => '</div>',
+    );
+    if((isset($rows) && (count($rows) > 0))){
+    $form['pager_table'] = array(
+        '#theme' => 'table',
+        '#header' => $header,
+        '#rows' => $rows,
+        '#empty' => t('There are no messages for the client.'),
+        '#attributes' => array('class' => array('table table-sorting table-hover table-bordered datatable'),'id' => array('datatable-column-interactive')),
+    );
+    }
+
+     
+    $form['message'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Send Message to '.$patient_name),
+        '#required' => true,
+    );
+     
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('SEND'),
+        "#attributes" => array("CLASS"=>"button_medium add_top"),
+    );
+    
+    return $form;
+    
+}
+
+function geia_pt_patient_chat_form_submit($form, &$form_state){
+    include_once DRUPAL_ROOT . '/sites/all/modules/custom/geia_services/resources/messages.inc';
+    global $user;
+    
+    if (arg(0) == 'pt' && is_numeric(arg(2))) {
+        $data = array();
+        $pid = arg(2);
+    }
+   
+    $message_time =  time();
+    $milliseconds = round(microtime(true) * 1000);
+  
+    $data = array(
+        'message_id' => 'm_'.$user->uid.'_'.$pid.'_'.$milliseconds,
+        'uid1' => $user->uid,
+        'uid2' => $pid,
+        'message' => $message = $form_state['values']['message'],
+        'timestamp' => $message_time,
+    );
+      
+    db_insert('drupalchat_msg')
+        ->fields($data)
+        ->execute();
+        
+    geia_pt_apns_send_message($pid, $message);
+	
+	$data = array(
+	   'uid' => $pid,
+	   'category' => 'messages',
+	   'title' => 'Message from your PT',
+	   'message' => $form_state['values']['message'],
+	   'image_url' =>'',
+	   'created' => time(),
+	   'updated' => time(),
+
+	);
+	
+	geia_services_create_notification($data);
+}
+
+function geia_pt_apns_send_message($pid, $message, $category = null) {
+	
+	if(!(isset($category))){
+		$category = 'MESSAGE';
+	}
+	
+	$query = db_select('push_notifications_tokens', 'pnt');
+	$query->fields('pnt');
+	$query->condition('uid', $pid, '=');
+	$query->condition('type', 0, '=');
+	$result = $query->execute();
+	$tokens = array();
+	while ($record = $result->fetchAssoc()) {
+		$tokens[] = $record['token'];
+	}
+	$payload['aps'] = array(
+		'alert' => $message,
+		'sound' => 'default',
+		'badge' => 1,
+		'category' => $category,
+	);
+	
+	watchdog('push notification','sending push: <pre>'. print_r($payload,TRUE).'</pre>');
+	
+	push_notifications_apns_send_message($tokens, $payload);
+}
+
+function geia_pt_patient_set_goals(){
+	$goals_form = drupal_get_form('geia_pt_patient_set_goals_form');
+	$output = drupal_render($goals_form);
+	return $output;
+	
+	
+}
+
+function geia_pt_patient_set_goals_form($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		
+
+			   $query = db_select('activity_goals', 'ag');
+			   $query->fields('ag');
+			   $query->condition('ag.uid',$uid,'=');
+			   $result = $query->execute();
+			   $rows = array();
+			   while($record = $result->fetchAssoc()) {
+				$data = array( 
+					gmdate("m-d-Y",$record['date']),
+					$record['total_steps'],
+					$record['time_active_high'],
+					$record['time_active_medium'],
+					$record['time_active_low'],
+					$record['instructions'],
+				);
+				$rows[] = array('data' => $data);
+
+			   }
+		$header = array('Date','Total Steps','Time High', 'Time Medium', 'Time Low', 'Instructions');
+		
+		$form['#prefix'] = '<div id="newpatient-form" class="pt-forms"><h2>Patient Activity Goals</h2>';
+		$form['#suffix'] = '</div>';
+		
+		$form['pager_table'] = array(
+				 '#theme' => 'table',
+				 '#header' => $header,
+				 '#rows' => $rows,
+				 '#empty' => t('There are no results for the client.'),
+				 '#attributes' => array('class' => array('table table-striped table-bordered table-condensed')),
+		 ); 
+		 $steps = array(
+			 0 => 0,
+			 500 => 500,
+			 1000 => 1000,
+			 1500 => 1500,
+			 2000 => 2000,
+			 2500 => 2500,
+			 3000 => 3000,
+			 3500 => 3500,
+			 4000 => 4000,
+			 4500 => 4500,
+			 5000 => 5000,
+			 5500 => 5500,
+			 6000 => 6000,
+			 6500 => 6500,
+			 7000 => 7000,
+			 7500 => 7500,
+			 8000 => 8000,
+			 8500 => 8500,
+			 9000 => 9000,
+			 9500 => 9500,
+			 10000 => 10000,
+			 10500 => 10500,
+			 11000 => 11000,
+			 11500 => 11500,
+			 12000 => 12000,
+			 12500 => 12500,
+			 13000 => 13000,
+			 13500 => 13500,
+			 14000 => 14000,
+			 14500 => 14500,
+			 15000 => 15000,
+			 15500 => 15500,
+			 16000 => 16000,
+			 16500 => 16500,
+			 17000 => 17000,
+			 17500 => 17500,
+			 18000 => 18000,
+			 18500 => 18500,
+			 19000 => 19000,
+			 19500 => 19500,
+			 20000 => 20000
+			 
+		 );
+		 $time = array();
+		 foreach (range(0, 180) as $number) {
+		     $time[] = $number;
+		 }
+		 
+		 $form['widget'] = array(
+			 '#markup' => '<div class="widget"><div class="widget-header"><h3><i class="fa fa-edit"></i> Set Activity Levels</h3></div><div class="widget-content">',
+		 );
+		
+		$form['total_steps'] = array(
+			'#type'=> 'select',
+			'#options' => $steps,
+			'#required' => True,
+			'#title' => t('Total Daily Steps'),
+			'#attributes' => array('placeholder' => 'Total Steps','class' => array('form-control input-lg')),
+			'#prefix' => '<div class=".col-sm-4">',
+			'#suffix' => '</div>',
+	
+		);
+		
+		$form['time_active_high'] = array(
+			'#type'=> 'select',
+			'#required' => True,
+			'#options' => $time,
+			'#title' => t('Vigorous Activity Daily Minutes'),
+			'#attributes' => array('placeholder' => 'High Activity Mins - integer only *','class' => array('form-control input-lg')),
+			'#prefix' => '<div class=".col-sm-4">',
+			'#suffix' => '</div>',
+	
+		);
+		
+		$form['time_active_medium'] = array(
+			'#type'=> 'select',
+			'#required' => True,
+			'#options' => $time,
+			'#title' => t('Moderate Activity Daily Minutes'),
+			'#attributes' => array('placeholder' => 'Medium Activity Mins - integer only *','class' => array('form-control input-lg')),
+			'#prefix' => '<div class=".col-sm-4">',
+			'#suffix' => '</div>',
+	
+		);
+		
+		$form['time_active_low'] = array(
+			'#type'=> 'select',
+			'#required' => True,
+			'#options' => $time,
+			'#title' => t('Light Activity Daily Minutes'),
+			'#attributes' => array('placeholder' => 'Low Activity Mins - integer only *','class' => array('form-control input-lg')),
+			'#prefix' => '<div class=".col-sm-4">',
+	        '#suffix' => '</div>',
+		);
+		
+
+		$form['instructions'] = array(
+			   '#type' => 'textarea',
+			   '#attributes' => array('placeholder' => 'activity instructions','class' => array('form-control input-lg')),
+			   '#prefix' => '',
+			  
+		  );
+		  
+		  $form['submit'] = array(
+			  '#type' => 'submit',
+			  '#value' => t('SUBMIT'),
+			  "#attributes" => array("CLASS"=>"button_medium add_top"),
+			   '#suffix' => '</div></div>',
+		  );
+	}
+	
+	
+	
+	return $form;
+}
+
+function geia_pt_patient_set_goals_form_submit($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		$id = 0;
+	}else{
+		return $form;
+	}
+	if($form_state['values']['total_steps'] <> ''){
+		$total_steps = $form_state['values']['total_steps'];
+		$time_active_high = $form_state['values']['time_active_high'];
+		$time_active_medium = $form_state['values']['time_active_medium'];
+		$time_active_low = $form_state['values']['time_active_low'];
+		$instructions = $form_state['values']['instructions'];
+		
+		$query = db_select('activity_goals', 'g');
+		$query->fields('g');
+		$query->condition('g.uid',$uid,'=');
+		$query->where('from_unixtime(date, \'%Y-%m-%d\') = CURDATE()');
+		$result = $query->execute();
+
+		while($record = $result->fetchAssoc()) {
+			$id = $record['id'];
+		}
+	
+		$record = array (
+			"uid" => $uid,
+			"total_steps" => $total_steps,
+			"time_active_high" => $time_active_high,
+			"time_active_medium" => $time_active_medium,
+			"time_active_low" => $time_active_low,
+			"instructions" => $instructions,
+			"date" => time(),
+			"created" => time(),
+			"updated" => time(),
+		
+			);
+			if ($id == 0){
+			$id = db_insert('activity_goals')
+				  ->fields($record)
+				  ->execute();
+		
+			  watchdog('activity_goals', "ID  = " . $id);
+			}else{
+			
+				$id = db_update('activity_goals')
+					  ->fields($record)
+					  ->condition('id',$id,'=')
+					  ->execute();
+				  watchdog('updated activity_goals', "ID  = " . $id);
+			}
+		
+		
+		
+	}
+	
+	$data = array(
+	   'uid' => $uid,
+	   'category' => 'prescription',
+	   'title' => 'Prescription Update',
+	   'message' => 'Your Therapist has updated your activity goals',
+	   'image_url' =>'',
+	   'created' => time(),
+	   'updated' => time(),
+
+	);
+	
+	geia_services_create_notification($data);
+	
+	return $form;
+}
+
+
+function geia_pt_patient_set_nutrition_goals(){
+	
+	$goals_form = drupal_get_form('geia_pt_patient_set_nut_goals_form');
+	$output = drupal_render($goals_form);
+	return $output;
+}
+
+function geia_pt_patient_set_nut_goals_form($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		
+		
+// 		$query = "select from_unixtime(date, '%m-%d-%Y') as date, type, goal from activity_goals
+// join activity_type on activity_type.id = activity_goals.goal_type
+// where uid = ".$uid." order by from_unixtime(date, '%m-%d-%Y')";
+
+
+
+			   $query = db_select('nutrition_goals', 'ng');
+			   $query->fields('ng');
+			   $query->condition('ng.uid',$uid,'=');
+			   $result = $query->execute();
+			   $rows = array();
+			   while($record = $result->fetchAssoc()) {
+				$data = array( 
+					gmdate("m-d-Y",$record['date']),
+					$record['calories'],
+					$record['fat'],
+					$record['protein'],
+					$record['carbohydrates'],
+					$record['instructions'],
+				);
+				$rows[] = array('data' => $data);
+
+			   }
+		$header = array('Date','Calories','Fat g', 'Protein g', 'Carbohydrates g', 'Instructions');
+		$form['#prefix'] = '<div id="newpatient-form" class="pt-forms"><h2>Patient Nutrition Goals</h2>';
+		$form['#suffix'] = '</div>';
+		
+		$form['pager_table'] = array(
+				 '#theme' => 'table',
+				 '#header' => $header,
+				 '#rows' => $rows,
+				 '#empty' => t('There are no results for the client.'),
+				 '#attributes' => array('class' => array('table table-striped table-bordered table-condensed')),
+		 ); 
+		
+		$form['calories'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#required' => True,
+			'#attributes' => array('placeholder' => 'Total Calories - integer only *','class' => array('form-control')),
+	
+		);
+		
+		$form['fat'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#required' => True,
+			'#attributes' => array('placeholder' => 'Fat g *','class' => array('form-control')),
+	
+		);
+		
+		$form['protein'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#attributes' => array('placeholder' => 'Protein g *','class' => array('form-control')),
+	
+		);
+		
+		$form['carbohydrates'] = array(
+			'#type'=> 'textfield',
+			'#size' => 20,
+			'#required' => True,
+			'#attributes' => array('placeholder' => 'Carbs g *','class' => array('form-control')),
+	
+		);
+		
+
+		$form['instructions'] = array(
+			   '#type' => 'textarea',
+			   '#attributes' => array('placeholder' => 'nutrition instructions','class' => array('form-control')),
+		  );
+		  
+		  $form['submit'] = array(
+			  '#type' => 'submit',
+			  '#value' => t('SUBMIT'),
+			  "#attributes" => array("CLASS"=>"button_medium add_top"),
+		  );
+	}
+	
+	
+	
+	return $form;
+}
+
+function geia_pt_patient_set_nut_goals_form_submit($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		$id = 0;
+	}else{
+		return $form;
+	}
+	if($form_state['values']['calories'] <> ''){
+		$calories = $form_state['values']['calories'];
+		$fat = $form_state['values']['fat'];
+		$protein = $form_state['values']['protein'];
+		$carbohydrates = $form_state['values']['carbohydrates'];
+		$instructions = $form_state['values']['instructions'];
+		
+		$query = db_select('nutrition_goals', 'g');
+		$query->fields('g');
+		$query->condition('g.uid',$uid,'=');
+		$query->where('from_unixtime(date, \'%Y-%m-%d\') = CURDATE()');
+		$result = $query->execute();
+
+		while($record = $result->fetchAssoc()) {
+			$id = $record['id'];
+		}
+	
+		$record = array (
+			"uid" => $uid,
+			"calories" => $calories,
+			"fat" => $fat,
+			"protein" => $protein,
+			"carbohydrates" => $carbohydrates,
+			"instructions" => $instructions,
+			"date" => time(),
+			"created" => time(),
+			"updated" => time(),
+		
+			);
+			if ($id == 0){
+			$id = db_insert('nutrition_goals')
+				  ->fields($record)
+				  ->execute();
+		
+			  watchdog('nutrition_goals', "ID  = " . $id);
+			}else{
+			
+				$id = db_update('nutrition_goals')
+					  ->fields($record)
+					  ->condition('id',$id,'=')
+					  ->execute();
+				  watchdog('updated nutrition_goals', "ID  = " . $id);
+			}
+		
+		
+		
+	}
+	
+	return $form;
+}
+
+
+function geia_pt_patient_webexercises($uid){
+	global $user;
+	
+	$patient = user_load($uid);
+	
+	$profile = profile2_load_by_user($patient,'main');
+	$data['profile'] = $profile;
+	$data['account'] = $patient;
+	
+	$webex_url = create_webexercise_account($data);
+	
+	$webex_rx = get_webexercise_rx($data);
+	
+	
+	
+	
+	$json_dump = print_r(json_decode($webex_rx, true), TRUE);
+	$webex_rx = json_decode($webex_rx);
+	
+	
+	
+	$webrx_html = "";
+	
+	if(isset($webex_rx->patient_id)):
+		
+		$patient_id = $webex_rx->patient_id;
+		$date_entered = $webex_rx->date_entered;
+		$date_rx = $webex_rx->date_rx;
+		$date_end = $webex_rx->date_end;
+		$duration = $webex_rx->duration;
+		
+		$header = "Patient ID: ".$patient_id."<br>";
+		$header .= "Date Entered: ".$date_entered."<br>";
+		$header .= "Date RX: ".$date_rx."<br>";
+		$header .= "Date End: ".$date_end."<br>";
+		$header .= "Duration: ".$duration."<br>";
+		$all = '';
+		$data = array();
+
+		foreach($webex_rx->exercises as $exercise){
+			$list = "<ul>";
+			$title = $exercise->title;
+			$comments = $exercise->comments;
+			$freq = $exercise->freq;
+			$sets = $exercise->sets;
+			$webm = $exercise->webm;
+			$mp4 = $exercise->mp4;
+			$reps = $exercise->reps;
+			$rest = $exercise->rest;
+			$code = $exercise->code;
+			$thumb1 = $exercise->thumb1;
+			$thumb2 = $exercise->thumb2;
+			
+			
+			$data['title'] = $exercise->title;
+			$data['comments'] = $exercise->comments;
+			$data['reps'] = $exercise->reps;
+			$data['sets'] = $exercise->sets;
+			$data['rest'] = $exercise->rest;
+			$data['webexcode'] = $exercise->code;
+			$data['webm'] = $exercise->webm;
+			$data['mp4'] = $exercise->mp4;
+			$data['mov'] = $exercise->mov;
+			$data['image1'] = $exercise->photo1;
+			$data['image2'] = $exercise->photo2;
+			$data['pid'] = $uid;
+			$data['ptid'] = $user->uid;
+			
+			
+			
+			_update_exercises($data);
+			
+			
+			$list = "<ul>";
+			$list .= "<li>Title: ".$title."</li>";
+			$list .= "<li>Comments: ".$comments."</li>";
+			$list .= "<li>Freq: ".$freq."</li>";
+			$list .= "<li>Sets: ".$sets."</li>";
+			$list .= '<video id="'.$code.'" width="320" height="240" muted controls loop autoplay>
+			<source src="'.$webm.'" type="video/webm" />
+			<source src="'.$mp4.'" type="video/mp4" />
+			</video>';
+			$list .= "<li>Reps: ".$reps."</li>";
+			$list .= "<li>Rest: ".$rest."</li>";
+			$list .= "<li>Code: ".$code."</li>";
+			$list .= "<li>Image 1: <img src='".$thumb1."'></li>";
+			$list .= "<li>Image 2: <img src='".$thumb2."'></li>";
+			$list .= "</ul>";
+
+			$all .= $list;
+			
+		}
+		
+		$webrx_html = $header."<br>".$all;
+		
+	endif;
+	
+	
+
+	
+	$html = "<button class='button_medium add_top' id='selectBtn'><a href=".$webex_url." target='_new'>Find More Exercises on WebExercises</a></button>";
+	
+	$data['webex_url'] = $webex_url;
+	$data['patient'] = $uid;
+
+	$html .= $webrx_html;
+	
+	//return $html;
+	
+	
+	return theme('pt_exercises',$data);
+}
+
+function _update_exercises($data){
+	
+	$id = 0;
+	$ex_id = 0;
+	//check if patient has this exercise already
+	$query = db_select('patient_exercises', 'pe');
+	$query->fields('pe');
+	$query->condition('pe.uid',$data['pid'],'=');
+	$query->condition('pe.webexcode',$data['webexcode'],'=');
+	
+	$result = $query->execute();
+
+	while($rdata = $result->fetchAssoc()) {
+		$id = $rdata['id'];
+		$data['ex_id'] = $ex_id;
+	}
+	
+	//exercise exists for this patient already
+	if($id != 0):
+		return;
+	else:
+	
+		//now add the exercise to the system but 1st check if the exercise is already there and reuse the ID
+		$query = db_select('exercises', 'e');
+		$query->fields('e');
+		$query->condition('e.webexcode',$data['webexcode'],'=');
+	
+		$result = $query->execute();
+
+		while($edata = $result->fetchAssoc()) {
+			$ex_id = $edata['id'];
+			$data['ex_id'] = $ex_id;
+		}
+	 
+		if($ex_id == 0): //create the exercise
+		
+			$exercise = array(
+				'webexcode' => $data['webexcode'],
+				'owner' => $data['ptid'],
+				'title' => $data['title'],
+				'created' => time(),
+				'updated' => time()
+			);
+			$ex_id = db_insert('exercises')
+				 ->fields($exercise)
+					 ->execute();
+			watchdog('exercise', "ID  = " . $ex_id);
+			
+			$data['ex_id'] = $ex_id;
+			
+			  //add video
+			  $recordv['exid'] = $ex_id;
+		  $recordv['mov'] = $data['mov'];
+		  $recordv['mp4'] = $data['mp4'];
+		  $recordv['webm'] = $data['webm'];
+		  $recordv['created'] = time();
+		  $recordv['updated'] = time();
+			  db_insert('exercise_videos')
+				  ->fields($recordv)
+				  ->execute();
+			  watchdog('exercise_video', "ID  = " . $ex_id);
+		  
+			  //add image
+
+			  $recordi['exid'] = $ex_id;
+		  $recordi['image1'] = $data['image1'];
+		  $recordi['image2'] = $data['image2'];
+		  $recordi['created'] = time();
+		  $recordi['updated'] = time();
+			  db_insert('exercise_images')
+				  ->fields($recordi)
+				  ->execute();
+			  watchdog('exercise_image', "ID  = " . $ex_id);
+			
+		 
+		endif;
+	
+		
+	endif;
+	
+	if($ex_id != 0){
+		//now create all the details 
+		_create_exercise_prescription($data);
+		
+	}
+	
+	return;
+	 
+}
+
+function _create_exercise_prescription($data){
+	
+	
+	//now save exercise details and create perscripton for patient
+	//video
+
+	$video = array(
+		'exid' => $data['ex_id'],
+		'mov' => $data['mov'],
+		'mp4' => $data['mp4'],
+		'webm' => $data['webm'],
+		'created' => time(),
+		'updated' => time()
+	);
+	
+	//now I am inserting them on the initial
+	 // db_insert('exercise_videos')
+//       	->fields($video)
+//       	->execute();
+//  	 watchdog('exercise videos', "ID  = " . $data['ex_id']);
+
+	 //images
+	 $images = array(
+		 'exid' => $data['ex_id'],
+		 'image1' => $data['image1'],
+		 'image2' => $data['image2'],
+		 'created' => time(),
+		 'updated' => time()
+	 );
+	 // db_insert('exercise_images')
+// 		 ->fields($images)
+//  		 ->execute();
+// 	 watchdog('exercise images', "ID  = " . $data['ex_id']);
+
+//prescription details
+
+	$prescription = array(
+		'exid' => $data['ex_id'],
+		'uid' => $data['pid'],
+		'comments' => $data['comments'],
+		'reps' => $data['reps'],
+		'sets' => $data['sets'],
+		'rest' => $data['rest'],
+		'active' => 1,
+		'webexcode' => $data['webexcode'],
+		'created' => time(),
+		'updated' => time()
+	
+	);
+
+ db_insert('patient_exercises')
+	 ->fields($prescription)
+	 ->execute();
+	watchdog('exercise prescrition', "ID  = " . $data['ex_id']);
+
+ drupal_set_message('Updated exercise list for this patient');
+	
+ return;
+	
+}
+
+function geia_pt_get_exercises($pid,$type = null){
+	//get the exercises
+	$query = db_select('patient_exercises', 'pe');
+	$query->join('exercises', 'e', 'pe.exid = e.id');
+	$query->join('exercise_videos', 'ev', 'pe.exid = ev.exid');
+	$query->join('exercise_images', 'ei', 'pe.exid = ei.exid');
+	$query->fields('pe');
+	$query->addField('pe', 'id', 'pe_id');
+	$query->fields('e');
+	$query->fields('ev');
+	$query->fields('ei');
+	if($type == 'active'){
+		$query->condition('pe.active', 1, '=');
+	}
+	$query->condition('pe.uid', $pid, '=');
+	
+	$result = $query->execute();
+	$exercises = array();
+	while ($record = $result->fetchAssoc()) {
+		$exercises[] = $record;
+	}
+	
+	return $exercises;
+}
+
+function geia_pt_get_patients_ex_count($pid,$interval = 7){
+	
+	$sql = "select * from `exercise_tracking` where created >= UNIX_TIMESTAMP((NOW() - INTERVAL :interval DAY)) and uid = :uid";
+	//print $sql;
+	$query = db_query('select * from exercise_tracking where created >= UNIX_TIMESTAMP((NOW() - INTERVAL :interval DAY)) and uid = :uid', array(':uid' => $pid, ':interval' => $interval));
+	$result = $query->rowCount(); 
+
+	
+	return $result;
+}
+
+function geia_pt_get_patients_exercises($pid){
+    $days = array(
+    	0 => 0,
+		1 => 0,
+		2 => 0,
+		3 => 0,
+		4 => 0,
+		5 => 0,
+		6 => 0,
+		7 => 0,
+		
+    );
+	
+	$query = db_select('patient_exercises', 'pe');
+	$query->fields('pe');
+	$query->condition('pe.active', 1, '=');
+	$query->condition('pe.uid', $pid, '=');
+	
+	$result = $query->execute();
+	$exercises = array();
+	while ($record = $result->fetchAssoc()) {
+		$weekly = unserialize($record['weekly']);
+		if (is_array($weekly)){
+
+		 foreach($weekly as $wday){
+ 		   switch ($wday) {
+			   case "0":
+			   //no exercise that day
+			   break;
+ 		       case "sun":
+ 		            $days[0] +=  (1 * $record['daily']);
+ 		            break;
+ 		       case "mon":
+ 		            $days[1] += (1 * $record['daily']);
+ 		            break;
+ 		       case "tue":
+ 		            $days[2] += (1 * $record['daily']);
+ 		            break;
+ 	           case "wed":
+ 	                $days[3] += (1 * $record['daily']);
+ 	                break;
+ 	           case "thu":
+ 	                $days[4] += (1 * $record['daily']);
+ 	                break;
+ 	           case "fri":
+ 	                $days[5] += (1 * $record['daily']);
+ 	                break;
+                case "sat":
+                   $days[6] += (1 * $record['daily']);
+                   break;
+ 		   }
+		  
+		  }
+	    }
+	}
+	
+        $week_total = 0;
+		foreach($days as $day){
+			$week_total += $day;
+		}
+		
+		return $week_total;
+}
+
+function geia_pt_get_patients_daily_exercises($pid){
+    $days = array(
+    	0 => 0,
+		1 => 0,
+		2 => 0,
+		3 => 0,
+		4 => 0,
+		5 => 0,
+		6 => 0,
+		7 => 0,
+		
+    );
+	
+	$query = db_select('patient_exercises', 'pe');
+	$query->fields('pe');
+	$query->condition('pe.active', 1, '=');
+	$query->condition('pe.uid', $pid, '=');
+	
+	$result = $query->execute();
+	$exercises = array();
+	while ($record = $result->fetchAssoc()) {
+		$weekly = unserialize($record['weekly']);
+		if (is_array($weekly)){
+
+		 foreach($weekly as $wday){
+ 		   switch ($wday) {
+			   case "0":
+			   //no exercise that day
+			   break;
+ 		       case "sun":
+ 		            $days[0] +=  (1 * $record['daily']);
+ 		            break;
+ 		       case "mon":
+ 		            $days[1] += (1 * $record['daily']);
+ 		            break;
+ 		       case "tue":
+ 		            $days[2] += (1 * $record['daily']);
+ 		            break;
+ 	           case "wed":
+ 	                $days[3] += (1 * $record['daily']);
+ 	                break;
+ 	           case "thu":
+ 	                $days[4] += (1 * $record['daily']);
+ 	                break;
+ 	           case "fri":
+ 	                $days[5] += (1 * $record['daily']);
+ 	                break;
+                case "sat":
+                   $days[6] += (1 * $record['daily']);
+                   break;
+ 		   }
+		  
+		  }
+	    }
+	}
+	
+	
+	$today = date('N');
+	return $days[$today];
+	
+}
+
+
+
+function geia_pt_update_exercises_form($form, &$form_state,$pid){
+	$exercises = geia_pt_get_exercises($pid);
+	
+	$options = array();
+	foreach (range(0, 100) as $number) {
+	   $options[$number] = $number;
+	}
+
+	$form['notify'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Send push notification about changes'),
+	);
+
+	$tabs_control = <<<EOT
+<ul class="nav nav-tabs" role="tablist">
+	<li role="presentation" class="active">
+		<a href="#edit-fieldset-active" role="tab" data-toggle="tab">Active Exercises</a>
+	</li>
+	<li role="presentation">
+		<a href="#edit-fieldset-inactive" role="tab" data-toggle="tab">Inactive Exercises</a>
+	</li>
+</ul>
+EOT;
+	$form['tabs_control'] = array(
+		'#markup' => $tabs_control,
+	);
+
+	$form['tabs'] = array(
+		'#markup' => '',
+		'#prefix' => '<div class="tab-content">',
+		'#suffix' => '</div>',
+	);
+	$form['tabs']['fieldset_active'] = array(
+		'#type' => 'fieldset',
+		'#attributes' => array(
+			'role' => 'tabpanel',
+			'class' => array('tab-pane', 'active'),
+		),
+	);
+	$form['tabs']['fieldset_inactive'] = array(
+		'#type' => 'fieldset',
+		'#attributes' => array(
+			'role' => 'tabpanel',
+			'class' => array('tab-pane'),
+		),
+	);
+	$form['tabs']['fieldset_active']['items'] = array(
+		'#tree' => true,
+	);
+	$form['tabs']['fieldset_inactive']['items'] = array(
+		'#tree' => true,
+	);
+
+	foreach ($exercises as $i => $exercise) {
+		$id = $exercise['pe_id'];
+		$key = $exercise['active'] ? 'fieldset_active' : 'fieldset_inactive';
+
+		$form['tabs'][$key]['items'][$id] = array(
+			'#tree' => true,
+		);
+		$form['tabs'][$key]['items'][$id]['info'] = array(
+			'#type'=> 'item',
+			'#markup' => '
+				<label><h4><i class="fa fa-gears"></i> '.$exercise['title'].'</h4></label>
+                <a href="/pt/patient/'.$pid.'/webex/' . $id . '/delete" class="fa fa-times pt-remove" onclick="return confirm(\'Do you really want to remove this exercise from the patient?\')"></a>
+				<div>
+					<span><img src="'.$exercise['image1'].'" width="250"></span>
+					<span><img src="'.$exercise['image2'].'" width="250"></span>
+				</div>
+				<div>
+					<span class="video">
+						<video id="'.$exercise['webexcode'].'" width="320" height="240" muted controls loop autoplay>
+							<source src="'.$exercise['webm'].'" type="video/webm" />
+							<source src="'.$exercise['mp4'].'" type="video/mp4" />
+						</video>
+					</span>
+				</div>',
+			'#prefix' => '<fieldset class="panel panel-default" style="background-color: #eee;"><div class="panel-body">',
+		);
+		$form['tabs'][$key]['items'][$id]['active'] = array(
+			'#type'=> 'checkbox',
+			'#title' => t('Active'),
+			'#default_value' => $exercise['active'],
+		);
+		$form['tabs'][$key]['items'][$id]['comments'] = array(
+			//'#title' => t('Comments/Instructions'),
+			'#type' => 'textarea',
+			'#default_value' => $exercise['comments'],
+			'#prefix' => '<label><h4><i class="fa fa-comments"></i> Comments/Instructions</h4></label><div class="col-xs-36 col-sm-16"><span class="comments">',
+			'#suffix' => '</span></div>',
+		);
+		$form['tabs'][$key]['items'][$id]['reps'] = array(
+			'#title' => t('Reps'),
+			'#type' => 'select',
+			'#options' => $options,
+			'#default_value' => $exercise['reps'],
+			'#prefix' => '<fieldset class="form-group"><div class="col-xs-12 col-sm-4">',
+			'#suffix' => '</div>',
+		);
+		$form['tabs'][$key]['items'][$id]['sets'] = array(
+			'#title' => t('Sets'),
+			'#type' => 'select',
+			'#options' => $options,
+			'#default_value' => $exercise['sets'],
+			'#prefix' => '<div class="col-xs-12 col-sm-4">',
+			'#suffix' => '</div>',
+		);
+		$form['tabs'][$key]['items'][$id]['rest'] = array(
+			'#title' => t('Rest'),
+			'#type' => 'select',
+			'#default_value' => $exercise['rest'],
+			'#options' => $options,
+			'#prefix' => '<div class="col-xs-12 col-sm-4">',
+			'#suffix' => '</div>',
+		);
+		$form['tabs'][$key]['items'][$id]['daily'] = array(
+			'#title' => t('daily'),
+			'#type' => 'select',
+			'#default_value' => $exercise['daily'],
+			'#options' => $options,
+			'#prefix' => '<div class="col-xs-12 col-sm-4">',
+			'#suffix' => '</div></fieldset>',
+		);
+		
+		$weekly = array();
+		$week_list = unserialize($exercise['weekly']);
+
+		if(count($week_list) > 0){
+			
+			$weekly = $week_list;
+		}
+		
+		
+		
+		$form['tabs'][$key]['items'][$id]['weekly'] = array(
+			//'#title' => t('<b>weekly</b>'),
+			'#type' => 'checkboxes',
+			'#options' => array(
+				'sun' => t('Sunday'), 
+				'mon' => t('Monday'), 
+				'tue' => t('Tuesday'), 
+				'wed' => t('Wednesday'), 
+				'thu' => t('Thursday'), 
+				'fri' => t('Friday'), 
+				'sat' => t('Saturday'),
+			),
+			'#attributes' => array('CLASS'=>'onoffswitch-checkbox'),
+			'#prefix' => '<label><h4><i class="fa fa-calendar"></i> Weekly</h4></label><div class="container-inline">',
+			'#suffix' => '</div></div></fieldset>',
+			'#default_value' => $weekly,
+		);
+	}
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('SUBMIT'),
+		'#attributes' => array('CLASS'=>'button_medium add_top'),
+	);
+ 
+	return $form;
+} 
+
+function geia_pt_update_exercises_form_submit($form, &$form_state) {
+	foreach ($form_state['values']['items'] as $id => $item) {
+		$item['weekly'] = serialize($item['weekly']);
+		db_update('patient_exercises')
+			->fields($item)
+			->condition('id', $id, '=')
+			->execute();
+	}
+
+	if ($form_state['values']['notify']) {
+		$pid = arg(2);
+		geia_pt_apns_send_message($pid, t('Your Therapist has updated your exercise prescription'),'EXERCISES');
+		
+		$data = array(
+			   'uid' => $pid,
+			   'category' => 'exercises',
+			   'title' => 'Exercise Prescription',
+			   'message' => 'Your Therapist has updated your exercise prescription',
+			   'image_url' =>'',
+			   'created' => time(),
+			   'updated' => time(),
+
+			);
+	
+			geia_services_create_notification($data);
+	}
+
+	drupal_set_message(t('Patient exercise program was saved.'));
+}
+
+function create_user_webex($uid){
+	
+	$account = user_load($uid);
+	$profile = profile2_load_by_user($account,'main');
+	
+	$patient_id = generateRandomString();
+	
+	$data['profile'] = $profile;
+	$data['account'] = $account;
+	$data['patient_id'] = $patient_id;
+	
+	print $patient_id;die();
+	$profile->field_webex_patient_id['und']['0']['value'] = $patient_id;
+	
+	$webex_url = create_webexercise_account($data);
+	print $webex_url;die();
+	$profile->field_webex_url['und'][0]['value'] = $webex_url;
+  
+	profile2_save($profile);
+	
+	print "done";
+	
+}
+
+function create_webexercise_account($data){
+	
+	$url = 'https://sandbox.webexercises.com/wellnesslinks/api.html';
+	
+	$params = array('name'=> 'wellnesslinks',
+	'key' => 'pkm3nha6tc52ian89jsma0b',
+	'call'=>'generate_login',
+	'debug'=>'false',
+	'practice_id'=>'33219630-B03A-44F5-A171-D0194BE81836',
+	'practice_account'=>'Wellness Links Test Account',
+	'practice_contact'=>'Wellness Links',
+	'practice_address1'=>'1234 Main Street',
+	'practice_address2'=>'Suite 200',
+	'practice_city'=>'Anytown',
+	'practice_state'=>'CA',
+	'practice_zip'=>'17353',
+	'practice_phone'=>'877-895-9355',
+	'practice_email'=>'info@wellnesslinks.com',
+	'doc_id'=>'118E8B51-20F9-4860-AF6A-367E1AEEFD82',
+	'doc_name'=>'George Plsek',
+	'doc_email'=>'george@gtekg.com',
+	'patient_id' => $data['profile']->field_webex_patient_id['und'][0]['value'],
+	'patient_name_first'=> $data['profile']->field_first_name['und'][0]['value'],
+	'patient_name_middle'=>'',
+	'patient_name_last'=>$data['profile']->field_last_name['und'][0]['value'],
+	'patient_email'=>$data['account']->mail
+	);
+	$curl_options = array(
+		CURLOPT_URL => $url,
+		CURLOPT_POST => true,
+		CURLOPT_POSTFIELDS => http_build_query( $params ),
+		CURLOPT_HTTP_VERSION => 1.0,
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_HEADER => false
+	  );
+
+	  $curl = curl_init();
+	  curl_setopt_array( $curl, $curl_options );
+	  $result = curl_exec( $curl );
+	  
+	  $info = curl_getinfo($curl);
+	  $user_url = $info['redirect_url'];
+	  curl_close( $curl );
+	  
+	  return $user_url;
+	
+}
+function get_webexercise_rx($data){
+	
+	$url = 'https://sandbox.webexercises.com/wellnesslinks/api.html';
+	
+	$params = array('name'=> 'wellnesslinks',
+	'key' => 'pkm3nha6tc52ian89jsma0b',
+	'call'=>'get_current_rx',
+	'debug'=>'false',
+	'practice_id'=>'33219630-B03A-44F5-A171-D0194BE81836',
+	'practice_account'=>'Wellness Links Test Account',
+	'practice_contact'=>'Wellness Links',
+	'practice_address1'=>'1234 Main Street',
+	'practice_address2'=>'Suite 200',
+	'practice_city'=>'Anytown',
+	'practice_state'=>'CA',
+	'practice_zip'=>'17353',
+	'practice_phone'=>'877-895-9355',
+	'practice_email'=>'info@wellnesslinks.com',
+	'doc_id'=>'118E8B51-20F9-4860-AF6A-367E1AEEFD82',
+	'doc_name'=>'George Plsek',
+	'doc_email'=>'george@gtekg.com',
+	'patient_id' => $data['profile']->field_webex_patient_id['und'][0]['value'],
+	'patient_name_first'=> $data['profile']->field_first_name['und'][0]['value'],
+	'patient_name_middle'=>'',
+	'patient_name_last'=>$data['profile']->field_last_name['und'][0]['value'],
+	'patient_email'=>$data['account']->mail
+	);
+	
+	
+	
+	$curl_options = array(
+		CURLOPT_URL => $url,
+		CURLOPT_POST => true,
+		CURLOPT_POSTFIELDS => http_build_query( $params ),
+		CURLOPT_HTTP_VERSION => 1.0,
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_HEADER => false
+	  );
+
+	  $curl = curl_init();
+	  curl_setopt_array( $curl, $curl_options );
+	  $result = curl_exec( $curl );
+	  //print_r($result);die();
+	  curl_close( $curl );
+	  
+	  return $result;
+	
+}
+
+
+function generateRandomString($length = 10) {
+	$characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-';
+	$charactersLength = strlen($characters);
+	$randomString = '';
+	for ($i = 0; $i < $length; $i++) {
+		$randomString .= $characters[rand(0, $charactersLength - 1)];
+	}
+	return $randomString;
+}
+
+
+
+
+function geia_pt_patient_log_activity($uid){
+	
+	$goals_form = drupal_get_form('geia_pt_patient_activity_form');
+	$output = drupal_render($goals_form);
+	return $output;
+	
+}
+
+function geia_pt_patient_log_nutrition($uid){
+	
+	$goals_form = drupal_get_form('geia_pt_patient_nutrition_form');
+	$output = drupal_render($goals_form);
+	return $output;
+	
+}
+
+function geia_pt_push_activity_record(&$array, $i, $record) {
+    //$tick = date('m-d-Y', (int) $record['updated']);
+	$tick = date('d', (int) $record['updated']);
+    $array['data']['step'][0]['data'][$i] = array($i, $record['total_steps_goal']);
+    $array['data']['step'][1]['data'][$i] = array($i, $record['total_steps']);
+    $array['data']['high'][0]['data'][$i] = array($i, $record['time_active_high_goal']);
+    $array['data']['high'][1]['data'][$i] = array($i, $record['time_active_high']);
+    $array['data']['medium'][0]['data'][$i] = array($i, $record['time_active_medium_goal']);
+    $array['data']['medium'][1]['data'][$i] = array($i, $record['time_active_medium']);
+    $array['data']['low'][0]['data'][$i] = array($i, $record['time_active_low_goal']);
+    $array['data']['low'][1]['data'][$i] = array($i, $record['time_active_low']);
+    $array['ticks'][] = array($i, $tick);
+}
+
+function geia_pt_patient_activity_form($form, &$form_state){
+    if (arg(0) == 'pt' && is_numeric(arg(2))) {
+        $uid = arg(2);
+
+        // populate table
+        $query = db_select('activity_logs', 'a');
+        $query->fields('a');
+        $query->condition('a.uid',$uid,'=');
+        $query->orderBy('a.updated', 'DESC');
+        $result = $query->execute();
+        $rows = array();
+        
+        $today = array(
+            'total_steps' => 0,
+            'total_steps_goal' => 0,
+            'time_active_high' => 0,
+            'time_active_high_goal' => 0,
+            'time_active_medium' => 0,
+            'time_active_medium_goal' => 0,
+            'time_active_low' => 0,
+            'time_active_low_goal' => 0,
+        );
+
+        $days7 = $days30 = array(
+            'data' => array(
+                'step' => array(
+                    0 => array('label' => 'Steps Goal', 'data' => array()),
+                    1 => array('label' => 'Steps', 'data' => array()),
+                ),
+                'high' => array(
+                    0 => array('label' => 'Vigorous Goal', 'data' => array()),
+                    1 => array('label' => 'Vigorous', 'data' => array()),
+                ),
+                'medium' => array(
+                    0 => array('label' => 'Moderate Goal', 'data' => array()),
+                    1 => array('label' => 'Moderate', 'data' => array()),
+                ),
+                'low' => array(
+                    0 => array('label' => 'Low Goal', 'data' => array()),
+                    1 => array('label' => 'Low', 'data' => array()),
+                ),
+            ),
+            'ticks' => array(),
+        );
+
+        $days7_limit = date('Y-m-d', strtotime('-8 days'));
+		//$days7_limit = date('Y-m-d', strtotime('-77 days'));
+        $days30_limit = date('Y-m-d', strtotime('-31 days'));
+
+		$da7 = [];
+		$da30 = [];
+
+        $i = 0;
+        while ($record = $result->fetchAssoc()) {
+            $date = date('Y-m-d', (int) $record['updated']);
+            if ($date == date('Y-m-d')) {
+                $today = $record;
+            }
+
+            $data = array(
+                date("m-d-Y H:i:s",(int) $record['updated']),
+                $record['total_steps']."/".$record['total_steps_goal'],
+                $record['time_active_high']."/".$record['time_active_high_goal'],
+                $record['time_active_medium']."/".$record['time_active_medium_goal'],
+                $record['time_active_low']."/".$record['time_active_low_goal'],
+            );
+
+            if ($date > $days7_limit) {
+				$da7[] = $record;
+               // geia_pt_push_activity_record($days7, $i, $record);
+            }
+            if ($date > $days30_limit) {
+				$da30[] = $record;
+              //  geia_pt_push_activity_record($days30, $i, $record);
+            }
+
+            $rows[] = array('data' => $data);
+            $i++;
+        }
+
+		$da7 = array_reverse($da7);
+		foreach ($da7 as $index => $da) {
+		  geia_pt_push_activity_record($days7, $index, $da);
+		}
+
+		$da30 = array_reverse($da30);
+		foreach ($da30 as $index => $da) {
+		  geia_pt_push_activity_record($days30, $index, $da);
+		}
+
+        drupal_add_js(drupal_get_path('module', 'geia_pt') . '/js/activities.js', array('type' => 'file', 'scope' => 'footer'));
+        drupal_add_js(array('activities' => array(
+            'days7' => $days7,
+            'days30' => $days30,
+        )), 'setting');
+
+        $header = array('Date','Total Steps','Time Active Vigorous','Time Active Moderate', 'Time Active Low');
+
+        $form['#prefix'] = '<div id="newpatient-form" class="pt-forms"><h2>Patient Activity Log</h2>';
+        $form['#prefix'] .= theme('pt_activities', array('today' => $today));
+        $form['#suffix'] = '</div>';
+
+        if ((isset($rows) && (count($rows) > 0))) {
+            $form['pager_table'] = array(
+                '#theme' => 'table',
+                '#header' => $header,
+                '#rows' => $rows,
+                '#empty' => t('There are no results for the client.'),
+                '#attributes' => array('class' => array('table table-sorting table-hover table-bordered datatable'),'id' => array('datatable-column-interactive')),
+            );
+        }
+        return $form;
+   }
+}
+
+
+
+
+function geia_pt_patient_nutrition_form($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+	  $uid = arg(2);
+	  
+ 
+	   
+	  // populate table
+	  
+	   $query = db_select('nutrition_logs', 'a');
+		$query->fields('a');
+	   $query->condition('a.uid',$uid,'=');
+	   $result = $query->execute();
+	   $rows = array();
+	   while($record = $result->fetchAssoc()) {
+		$data = array( 
+			gmdate("m-d-Y h:m",$record['date']),
+			$record['calories']."/".$record['calories_goal'],
+			$record['carbohydrates']."/".$record['carbohydrates_goal'],
+			$record['fat']."/".$record['fat_goal'],
+			$record['protein']."/".$record['protein_goal'],
+
+			
+		);
+		$rows[] = array('data' => $data);
+
+	   }
+	  $header = array('Date','Calories','Carbohydrates','Fat', 'Protein');
+
+ 
+	$form['#prefix'] = '<div id="newpatient-form" class="pt-forms"><h2>Patient Nutrition Log</h2>';
+	$form['#suffix'] = '</div>';
+	
+	$form['pager_table'] = array(
+			 '#theme' => 'table',
+			 '#header' => $header,
+			 '#rows' => $rows,
+			 '#empty' => t('There are no results for the client.'),
+			 '#attributes' => array('class' => array('table table-striped table-bordered table-condensed')),
+	 );
+
+  
+	
+	return $form;
+	
+ }
+	
+}
+
+function geia_pt_patient_activity_form_submit($form, &$form_state){
+	
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		$id = 0;
+	}else{
+		return $form;
+	}
+	if($form_state['values']['steps'] <> ''){
+		$goal_id = $form_state['values']['id'];
+		$total_steps = $form_state['values']['steps'];
+		$miles_steps = $form_state['values']['miles_steps'];
+		$calories_steps = $form_state['values']['calories_steps'];
+		
+		$active_low = $form_state['values']['active_low'];
+		$miles_low = $form_state['values']['miles_low'];
+		$calories_low = $form_state['values']['calories_low'];
+		
+		$active_medium = $form_state['values']['active_medium'];
+		$miles_medium = $form_state['values']['miles_medium'];
+		$calories_medium = $form_state['values']['calories_medium'];
+		
+		$active_high = $form_state['values']['active_high'];
+		$miles_high = $form_state['values']['miles_high'];
+		$calories_high = $form_state['values']['calories_high'];
+		
+		
+
+		
+		$query = db_select('activity', 'a');
+		$query->fields('a');
+		$query->condition('a.uid',$uid,'=');
+		$query->where('from_unixtime(date, \'%Y-%m-%d\') = CURDATE()');
+		$result = $query->execute();
+
+		while($record = $result->fetchAssoc()) {
+			$id = $record['id'];
+		}
+	
+		$record = array (
+			"uid" => $uid,
+			"goal_id" => $goal_id,
+			"total_steps" => $total_steps,
+			"steps_miles" => $miles_steps,
+			"steps_calories" => $calories_steps,
+			"activity_low" => $active_low,
+			"activity_low_miles" => $miles_low,
+			"activity_low_calories" => $calories_low,
+			"activity_medium" => $active_medium,
+			"activity_medium_miles" => $miles_medium,
+			"activity_medium_calories" => $calories_medium,
+			"activity_high" => $active_high,
+			"activity_high_miles" => $miles_high,
+			"activity_high_calories" => $calories_high,
+			"date" => time(),
+			"created" => time(),
+			"updated" => time(),
+		
+			);
+			if ($id == 0){
+			$id = db_insert('activity')
+				  ->fields($record)
+				  ->execute();
+		
+			  watchdog('activity', "ID  = " . $id);
+			}else{
+			
+				$id = db_update('activity')
+					  ->fields($record)
+					  ->condition('id',$id,'=')
+					  ->execute();
+				  watchdog('updated activity', "ID  = " . $id);
+			}
+		
+		
+		
+	}
+	
+	return $form;
+	
+}
+
+function geia_pt_patient_treshold(){
+	
+	
+	
+	$treshold_form = drupal_get_form('geia_pt_patient_set_treshold_form');
+	$output = drupal_render($treshold_form);
+	return $output;
+	
+}
+
+function geia_pt_patient_posture($patient_id, $posture_id = null) {
+	$query = db_select('node', 'n');
+	$query->fields('n');
+	$query->join('field_data_field_patient', 'p', 'p.entity_id = n.nid');
+	$query->condition('p.field_patient_uid', $patient_id, '=');
+	$query->orderBy('n.created', 'DESC');
+	$result = $query->execute();
+	$links = array(
+		'links' => array(),
+		'attributes' => array(),
+		'heading' => array(),
+	);    
+	while ($row = $result->fetch()) {
+		$links['links'][] = array(
+			'title' => t('SnapShot Report '.$row->type) .' ' . ($row->status ? format_date($row->created, 'custom', 'm/d/Y') : t('New')),
+			'href' => "pt/patient/{$patient_id}/posture-data/{$row->nid}",
+		);
+	}
+	if (empty($posture_id)) {
+		$posture = null;
+		$form = array();        
+	} else {
+		$posture = node_load($posture_id);
+		if (empty($posture)) {
+			drupal_not_found();
+		}
+		$form = drupal_get_form('geia_posture_form', $posture);
+	}
+	return theme('pt_posture', array('links' => $links, 'posture' => $posture, 'form' => $form));
+}
+
+
+function geia_posture_form($form, &$form_state, $posture) {
+	$form = array();
+	$form['posture_id'] = array(
+		'#type' => 'hidden',
+		'#value' => $posture->nid,
+	);
+	$form['comment'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Posture Comments'),
+		'#default_value' => empty($posture->field_report_summary) ? null : $posture->field_report_summary[LANGUAGE_NONE][0]['value'],
+	);
+	$form['status'] = array(
+		'#type' => 'checkbox',
+		'#title' => t('Publish'),
+		'#default_value' => $posture->status,
+	);
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+	);
+	return $form;
+}
+
+function geia_posture_form_submit($form, &$form_state) {
+	$values = $form_state['values'];
+	$posture = node_load($values['posture_id']);
+	if (empty($posture)) {
+		drupal_not_found();
+	}
+	$posture->field_report_summary[LANGUAGE_NONE][0]['value'] = $values['comment'];
+	$posture->status = $values['status'];
+	node_save($posture);
+	$pid = $posture->field_patient['und'][0]['uid'];
+	if($posture->status == 1){
+		geia_pt_apns_send_message($pid, t('Your Therapist has evaluated your Images or Video'),'SNAPSHOT');
+		
+		$data = array(
+			   'uid' => $pid,
+			   'category' => 'snapshot',
+			   'title' => 'Snapshot',
+			   'message' => 'Your Therapist has evaluated your Images or Video',
+			   'image_url' =>'',
+			   'created' => time(),
+			   'updated' => time(),
+
+			);
+	
+			geia_services_create_notification($data);
+		
+	}
+	
+	drupal_set_message(t('Posture was updated.'));
+}
+
+
+function geia_pt_patient_video($patient_id, $posture_id = null) {
+	$query = db_select('node', 'n');
+	$query->fields('n');
+	$query->join('field_data_field_patient', 'p', 'p.entity_id = n.nid');
+	$query->condition('p.field_patient_uid', $patient_id, '=');
+	$query->condition('p.bundle', 'posture_video', '=');
+	$query->orderBy('n.created', 'DESC');
+	$result = $query->execute();
+	$links = array(
+		'links' => array(),
+		'attributes' => array(),
+		'heading' => array(),
+	);    
+	while ($row = $result->fetch()) {
+		$links['links'][] = array(
+			'title' => t('Custom Video') . ' ' . ($row->status ? format_date($row->created, 'custom', 'm/d/Y') : t('New')),
+			'href' => "pt/patient/{$patient_id}/posture-data/{$row->nid}",
+		);
+	}
+	if (empty($posture_id)) {
+		$posture = null;
+		$form = array();        
+	} else {
+		$posture = node_load($posture_id);
+		if (empty($posture)) {
+			drupal_not_found();
+		}
+		$form = drupal_get_form('geia_posture_form', $posture);
+	}
+	return theme('pt_posture', array('links' => $links, 'posture' => $posture, 'form' => $form));
+}
+
+
+
+
+function geia_pt_patient_posture_image($posture_id, $image_type) {
+	$posture = node_load($posture_id);
+	if (empty($posture)) {
+		drupal_not_found();
+	}
+	$form = drupal_get_form('geia_posture_image_form', $posture, $image_type);
+	return theme('pt_posture_image', array('image_type' => $image_type, 'form' => $form));
+}
+
+function geia_posture_image_form($form, &$form_state, $posture, $image_type) {
+	$libpath_literallycanvas = libraries_get_path('literallycanvas');
+	drupal_add_css($libpath_literallycanvas . '/css/literallycanvas.css', 'file');
+	drupal_add_js(libraries_get_path('reactjs') . '/react-with-addons.min.js', 'file');
+	drupal_add_js(libraries_get_path('reactjs') . '/react-dom.min.js', 'file');
+	drupal_add_js($libpath_literallycanvas . '/js/literallycanvas.js', 'file');
+
+	$image = field_get_items('node', $posture, "field_{$image_type}_image");
+	$image = empty($image) ? '' : image_style_url('posture_image', $image[0]['uri']);
+	drupal_add_js(array('geia_pt' => array('backgroundImage' => $image)), 'setting'); 
+
+	$shape = field_get_items('node', $posture, "field_{$image_type}_image_shape");
+	$shape = empty($shape) ? '' : $shape[0]['value'];
+	drupal_add_js(array('geia_pt' => array('shape' => $shape)), 'setting'); 
+	
+	drupal_add_js(drupal_get_path('module', 'geia_pt') . '/js/drawfield.js', 'file');
+
+	$form = array();
+	$form['image_data'] = array(
+		'#type'=> 'hidden',
+		'#size' => 20,
+		'#attributes' => array('id' => array('image-data')),
+	);
+	$form['shape_data'] = array(
+		'#type'=> 'hidden',
+		'#size' => 20,
+		'#attributes' => array('id' => array('shape-data')),
+	);
+	$form['posture_id'] = array(
+		'#type' => 'hidden',
+		'#value' => $posture->nid,
+	);
+	$form['image_type'] = array(
+		'#type' => 'hidden',
+		'#value' => $image_type,
+	);
+	
+	$comment = field_get_items('node', $posture, "field_{$image_type}_image_comments");
+	$comment = empty($comment) ? '' : $comment[0]['value'];
+	$form['comment'] = array(
+		'#type' => 'textarea',
+		'#title' => t('Comments'),
+		'#default_value' => $comment,
+	);
+
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+	);
+	return $form;
+}
+
+function geia_posture_image_form_submit($form, &$form_state) {
+	$values = $form_state['values'];
+
+	$posture = node_load($values['posture_id']);
+	if (empty($posture)) {
+		drupal_not_found();
+	}
+
+	$image_type = $values['image_type'];
+	$posture->{"field_{$image_type}_image_comments"}[LANGUAGE_NONE][0]['value'] = $values['comment'];
+
+	$image_data = explode(',', $values['image_data']);
+	$image_data = base64_decode($image_data[1]);
+	$file = file_save_data($image_data, "public://posture_image_{$values['posture_id']}_{$values['image_type']}.png", FILE_EXISTS_REPLACE);
+	$posture->{"field_{$image_type}_report_image"}[LANGUAGE_NONE][0] = (array) $file;
+
+	$posture->{"field_{$image_type}_image_shape"}[LANGUAGE_NONE][0]['value'] = $values['shape_data'];
+
+	node_save($posture);
+
+	$uid = $posture->field_patient[LANGUAGE_NONE][0]['uid'];
+	drupal_set_message(t('Image was updated.'));
+	drupal_goto("pt/patient/{$uid}/posture-data/{$posture->nid}");
+}
+
+function geia_pt_patient_set_treshold_form($form, &$form_state){
+	
+    
+	
+	//drupal_add_css($modpath.'/css/iThing.css', 'file');
+	
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$data = array();
+		$uid = arg(2);
+		
+		$patient = user_load($uid);
+		$account = profile2_load_by_user($patient,'main');
+	    $dob = 0;
+		if(isset($account->field_date_of_birth['und'])){
+			$dob = $account->field_date_of_birth['und']['0']['value'];
+		}
+		
+	
+		$low = 0;
+		$high = 0;
+		$age = 0;
+	
+	
+	    if($dob != 0){
+
+			$age = DateTime::createFromFormat('Y-m-d h:m:s', $dob)
+				 ->diff(new DateTime('now'))
+				 ->y;
+	    }else{
+	    	
+			$age = 30;
+	    }
+		
+
+		$max_rate = 220 - $age;
+
+		$high = round(($max_rate/100)*80);
+		$low = round(($max_rate/100)*70);
+		$steps_high = '105';
+		$steps_low = '85';
+		
+		
+		
+		
+		
+		
+		$query = db_select('treshhold_levels', 'tl');
+		$query->fields('tl');
+		$query->condition('tl.uid',$uid,'=');
+		$result = $query->execute();
+		$rows = array();
+		while($record = $result->fetchAssoc()) {
+		$data = array( 
+			$record['steps_low'],
+			$record['steps_high'],
+			$record['hr_low'],
+			$record['hr_high'],
+		);
+		 $rows[] = array('data' => $data);
+
+	   }
+	 $header = array('Steps Low','Steps High','HR Low', 'HR High');
+	if(count($data) > 0){
+	  	$my_thresholds = array(
+			'steps_low' => ($data[0])?:$steps_low,
+			'steps_high' => ($data[1])?:$steps_high,
+			'hr_low' => ($data[2])?:$low,
+			'hr_high' => ($data[3])?:$high
+		
+			);
+		
+	}else{
+		
+	  	$my_thresholds = array(
+			'steps_low' => $steps_low,
+			'steps_high' => $steps_high,
+			'hr_low' => $low,
+			'hr_high' => $high
+		
+			);
+	}
+  	
+		
+  	drupal_add_js(array('geia_pt' => $my_thresholds), 'setting'); 
+    $modpath = drupal_get_path('module', 'geia_pt');
+    drupal_add_js($modpath.'/js/threshold_slider.js', array('type' => 'file', 'scope' => 'footer', 'weight' => 5));
+
+	$form['#prefix'] = '<div id="newpatient-form" class="pt-forms col-sm-10"><h2>Set Patient Thresholds</h2>';
+	$form['#suffix'] = '</div>';
+
+	 $form['pager_table'] = array(
+			 '#theme' => 'table',
+			 '#header' => $header,
+			 '#rows' => $rows,
+			 '#empty' => t('There are no results for the client.'),
+			 '#attributes' => array('class' => array('table table-striped table-bordered table-condensed')),
+	 ); 
+	 
+	 $form['thresholdselect'] = array(
+		 '#markup' => '<h4>Select activity thresholds for your patient.</h4>',
+		 
+
+	 );
+	 
+	 $form['steps_slider'] = array(
+		 '#markup' => '			           <p>
+			           Select steps per minute to set activity level, the range between the two values will be considered moderate level, anything to the left is considered low activity range and anything above is considered vigorous activity range</p>
+		              <span class="fa fa-paw fa-3x" style="color: lightslategray;"> Steps</span><div class="steps_slider" style="margin-bottom:30px;"></div>',
+		 
+
+	 );
+	 
+	 $form['hr_slider'] = array(
+		 '#markup' => ' <p>
+			           Select heart rate per minute to set activity level, the range between the two values will be considered moderate level, anything to the left is considered low activity range and anything above is considered vigorous activity range</p>
+		             <span class="fa fa-heartbeat fa-3x" style="color: lightslategray;"> Heart Rate</span><div class="hr_slider" style="margin-bottom:30px;"></div>',
+		 
+
+	 );
+
+	 $form['steps_low'] = array(
+		 '#type'=> 'hidden',
+		 '#size' => 20,
+		 '#attributes' => array('placeholder' => 'Low Steps','class' => array('form-control'), 'id' => 'steps_low'),
+		 '#default_value' => ($my_thresholds['steps_low'])?:$steps_low,
+
+	 );
+
+	 $form['steps_high'] = array(
+		 '#type'=> 'hidden',
+		 '#size' => 20,
+		 '#attributes' => array('placeholder' => 'High Steps','class' => array('form-control'),'id' => 'steps_high'),
+		 '#default_value' => ($my_thresholds['steps_high'])?:$steps_high,
+
+	 );
+
+	 $form['hr_low'] = array(
+		 '#type'=> 'hidden',
+		 '#size' => 20,
+		 '#attributes' => array('placeholder' => 'Heart Rate Low','class' => array('form-control'),'id' => 'hr_low'),
+		 '#default_value' => ($my_thresholds['hr_low'])?:$low,
+
+	 );
+
+	 $form['hr_high'] = array(
+		 '#type'=> 'hidden',
+		 '#size' => 20,
+		 '#attributes' => array('placeholder' => 'Heart Rate High','class' => array('form-control'),'id' => 'hr_high'),
+		 '#default_value' => ($my_thresholds['hr_high'])?:$high,
+
+	 );
+
+	 $form['submit'] = array(
+		 '#type' => 'submit',
+		 '#value' => t('SUBMIT'),
+		 '#attributes' => array('CLASS'=>'button_medium add_top'),
+	 );
+
+	 return $form;
+	
+		
+		
+  }else{
+	  return;
+  }
+}
+
+function geia_pt_patient_set_treshold_form_submit($form, &$form_state){
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$uid = arg(2);
+		$id = 0;
+	}else{
+		return $form;
+	}
+	if($form_state['values']['steps_high'] <> ''){
+		$steps_high = $form_state['values']['steps_high'];
+		$steps_low = $form_state['values']['steps_low'];
+		$hr_high = $form_state['values']['hr_high'];
+		$hr_low = $form_state['values']['hr_low'];
+
+		
+		$query = db_select('treshhold_levels', 'tl');
+		$query->fields('tl');
+		$query->condition('tl.uid',$uid,'=');
+		$result = $query->execute();
+
+		while($record = $result->fetchAssoc()) {
+			$id = $record['id'];
+		}
+	
+		$record = array (
+			"uid" => $uid,
+			"steps_high" => $steps_high,
+			"steps_low" => $steps_low,
+			"hr_high" => $hr_high,
+			"hr_low" => $hr_low,
+			);
+			if ($id == 0){
+			$id = db_insert('treshhold_levels')
+				  ->fields($record)
+				  ->execute();
+		
+			  watchdog('treshhold_levels', "ID  = " . $id);
+			}else{
+			
+				$id = db_update('treshhold_levels')
+					  ->fields($record)
+					  ->condition('id',$id,'=')
+					  ->execute();
+				  watchdog('updated nutrition_goals', "ID  = " . $id);
+			}
+		
+		
+		
+	}
+	
+	$data = array(
+		   'uid' => $uid,
+		   'category' => 'prescription',
+		   'title' => 'Activity treshhold',
+		   'message' => 'Your Therapist has updated your activity treshhold levels',
+		   'image_url' =>'',
+		   'created' => time(),
+		   'updated' => time(),
+
+		);
+	
+		geia_services_create_notification($data);
+	
+	return $form;
+}
+
+
+
+
+function _activity_options(){
+	
+	$query = db_select('activity_type', 'a');
+	$query->fields('a');
+	$result = $query->execute();
+	$row = array();
+	while($record = $result->fetchAssoc()) {
+		$row[$record['id']] = $record['type'];
+	}
+	return $row;
+}
+
+function _get_goal($uid){
+	$query = db_select('activity_goals', 'a');
+	$query->fields('a');
+	$query->condition('a.uid',$uid,'=');
+	$result = $query->execute();
+	$row = array();
+	while($record = $result->fetchAssoc()) {
+		$row[$record['id']] = $record['type'];
+	}
+	return $row;
+}
+
+
+function _import_sample_data(){
+	
+	$data = drupal_get_path('module', 'geia_blocks') . '/sample_data/stepcount_sample.xml';
+	
+	$xml = simplexml_load_file($data) or die("Error: Cannot create object");
+	
+	//print_r($xml->Record[0]);
+	
+	foreach ($xml->Record as $stepdata) {
+	
+
+	//print_r(dateDiff($stepdata['startDate'], $stepdata['endDate'], $precision = 6));
+	
+	$diff = abs(strtotime($stepdata['startDate']) - strtotime($stepdata['endDate']));
+	
+	$step_min = round(((integer)$stepdata['value']/$diff)*60);
+	   
+	   
+	$record = array (
+		"uid" => 1,
+		"created" => strtotime($stepdata['creationDate']),
+		"start_date" => strtotime($stepdata['startDate']),
+		"end_date" => strtotime($stepdata['endDate']),
+		"step_count" => (integer)$stepdata['value'],
+		"step_min" => $step_min,
+		);
+		db_insert('step_data')
+						  ->fields($record)
+						  ->execute();
+		
+		print "insrted record $step_min \n";
+	
+	}
+	
+	
+}
+
+
+
+function dateDiff($time1, $time2, $precision = 6) {
+	// If not numeric then convert texts to unix timestamps
+	if (!is_int($time1)) {
+	  $time1 = strtotime($time1);
+	}
+	if (!is_int($time2)) {
+	  $time2 = strtotime($time2);
+	}
+ 
+	// If time1 is bigger than time2
+	// Then swap time1 and time2
+	if ($time1 > $time2) {
+	  $ttime = $time1;
+	  $time1 = $time2;
+	  $time2 = $ttime;
+	}
+ 
+	// Set up intervals and diffs arrays
+	$intervals = array('year','month','day','hour','minute','second');
+	$diffs = array();
+ 
+	// Loop thru all intervals
+	foreach ($intervals as $interval) {
+	  // Create temp time from time1 and interval
+	  $ttime = strtotime('+1 ' . $interval, $time1);
+	  // Set initial values
+	  $add = 1;
+	  $looped = 0;
+	  // Loop until temp time is smaller than time2
+	  while ($time2 >= $ttime) {
+		// Create new temp time from time1 and interval
+		$add++;
+		$ttime = strtotime("+" . $add . " " . $interval, $time1);
+		$looped++;
+	  }
+ 
+	  $time1 = strtotime("+" . $looped . " " . $interval, $time1);
+	  $diffs[$interval] = $looped;
+	}
+	
+	$count = 0;
+	$times = array();
+	// Loop thru all diffs
+	foreach ($diffs as $interval => $value) {
+	  // Break if we have needed precission
+	  if ($count >= $precision) {
+		break;
+	  }
+	  // Add value and interval 
+	  // if value is bigger than 0
+	  if ($value > 0) {
+		// Add s if value is not 1
+		if ($value != 1) {
+		  $interval .= "s";
+		}
+		// Add value and interval to times array
+		$times[] = $value . " " . $interval;
+		$count++;
+	  }
+	}
+ 
+	// Return string with times
+	return $times;
+  }
+  
+ function  _posture(){
+	
+	 $uid = 1;
+	   $url = '';
+	   $sql = "select nid from node where type = 'posture' and uid = :uid order by nid desc limit 1";
+	  
+	   $result = db_query($sql, array(':uid' => $uid));
+
+	   foreach($result as $record) {
+
+		 $nid = $record->nid;
+		
+	   }
+
+	   $node = node_load($nid);
+	   
+	   foreach($node->field_posture_files['und'] as $file){
+		
+		   if($file['filemime'] == 'application/pdf'){
+			
+			   $url = file_create_url($file['uri']);
+			
+		   }
+		
+	   }
+	   if($url == ''){
+		  return "Posture Data not available";
+	   }else{
+		 return $url;
+	   }
+	   
+
+
+  }
+  
+  
+  function geia_pt_draw_posture(){
+	
+	  $libpath_literallycanvas = libraries_get_path('literallycanvas');
+	  $libpath_reactjs = libraries_get_path('reactjs');
+	  $modpath = drupal_get_path('module', 'geia_pt');
+	  drupal_add_css($libpath_literallycanvas.'/css/literallycanvas.css', 'file');
+	  drupal_add_js($libpath_reactjs.'/react.js', 'file');
+	  drupal_add_js($libpath_literallycanvas.'/js/literallycanvas.js', 'file');
+	  $my_variables = array('backgroundImage' => '/sites/default/files/test_4.png');
+	  drupal_add_js(array('geia_pt' => $my_variables), 'setting'); 
+	  
+	  drupal_add_js($modpath.'/js/drawfield.js', 'file');
+	  $form['#prefix'] = "<div class='literally export' style='width:450px;height:750px;'></div>";
+	  $form['imagedata'] = array(
+		 '#type'=> 'hidden',
+		 '#size' => 20,
+		 '#attributes' => array('class' => array('imagedata'),'id' => array('imagedata')),
+	  );
+	  $form['patientID'] = array(
+		 '#type'=> 'textfield',
+		 '#size' => 20,
+	  );
+	 
+	  
+	  return $form;
+
+  }
+  
+  
+  function _unread_messages($uid){
+	  $count = 0;
+      $query = db_select('drupalchat_msg', 'msg')
+          ->fields('msg')
+          ->condition('uid1', $uid)
+          ->condition('is_new', 1)
+          ->groupBy('uid1');
+      $query->addExpression("COUNT('uid1')", 'unread_messages');
+      $result = $query->execute();	
+
+      $unread_messages = array();
+      while ($row = $result->fetchAssoc()) {
+
+		  $count =  $row['unread_messages'];
+
+      }
+	
+	  return $count;
+  }
+  
+  
+  function _mark_messages_as_read($uid){
+	  
+	  $num_updated = db_update('drupalchat_msg') // Table name no longer needs {}
+	    ->fields(array(
+	      'is_new' => 0,
+	    ))
+	    ->condition('uid1', $uid)
+	    ->execute();
+		
+		//drupal_set_message('updated: '.$num_updated);
+  	
+	
+  }
+
+function geia_pt_therapist_profile_form($form, &$form_state) {
+    global $user;
+
+    $profile = profile2_load_by_user($user, 'main');
+
+    $first_name = field_get_items('profile2', $profile, 'field_first_name');
+    $last_name = field_get_items('profile2', $profile, 'field_last_name');
+    $phone = field_get_items('profile2', $profile, 'field_phone');
+    $image = field_get_items('profile2', $profile, 'field_profile_image');
+
+    $form = array();
+    $form['credentials'] = array(
+        '#type' => 'fieldset',
+    );
+    $form['credentials']['email'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Email'),
+        '#default_value' => $user->name,
+        '#required' => true,
+    );    
+    $form['credentials']['password'] = array(
+        '#type' => 'password',
+        '#title' => t('Current Password'),
+    );    
+    $form['credentials']['new_password'] = array(
+        '#type' => 'password',
+        '#title' => t('New Password'),
+    );    
+    $form['credentials']['confirm_password'] = array(
+        '#type' => 'password',
+        '#title' => t('Confirm Password'),
+    );   
+    $form['first_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('First Name'),
+        '#default_value' => empty($first_name) ? '' : $first_name[0]['safe_value'],
+    );
+    $form['last_name'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Last Name'),
+        '#default_value' => empty($last_name) ? '' : $last_name[0]['safe_value'],
+    );
+    $form['phone'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Phone'),
+        '#default_value' => empty($phone) ? '' : $phone[0]['safe_value'],
+    );
+
+    $form['profile_image'] = array(
+        '#type' => 'fieldset',
+    );
+    $form['profile_image']['image'] = array(
+        '#type' => 'file',
+        '#title' => t('Profile image'),
+    );
+    if (!empty($image)) {
+        $form['profile_image']['image']['#suffix'] = theme_image_style(array(
+            'style_name' => 'thumbnail',
+            'path' => $image[0]['uri'],
+            'width' => null,
+            'height' => null,
+        ));
+    }
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save profile'),
+    );
+
+    return $form;
+}
+
+function geia_pt_therapist_profile_form_validate($form, &$form_state) {
+    global $user;
+
+    $values = $form_state['values'];
+    if ($values['email'] != $user->name) {
+        if (!valid_email_address($values['email'])) {
+            form_set_error('email', t('The e-mail address email is not valid.', array('%email' => $values['email'])));
+        }
+
+        $uid = db_select('users')
+            ->fields('users', array('uid'))
+            ->condition('name', $values['email'], '=')
+            ->range(0, 1)
+            ->execute()
+            ->fetchField();
+        if ((bool) $uid) {
+            form_set_error('email', t('The e-mail address %email is already taken.', array('%email' => $values['email'])));
+        }
+    }
+
+    if ($values['email'] != $user->name || !empty($values['new_password'])) {
+        module_load_include('inc', 'content', 'includes/password');
+        if (!user_check_password($values['password'], $user)) {
+            form_set_error('password', t('Password is not valid.'));
+        }
+    }
+
+    if (!empty($values['new_password'])) {
+        if ($values['new_password'] != $values['confirm_password']) {
+            form_set_error('confirm_password', t('Password confirmation is not valid.'));
+        }
+    }
+}
+
+function geia_pt_therapist_profile_form_submit($form, &$form_state) {
+    global $user;
+
+    $values = $form_state['values'];
+
+    $user->mail = $values['email'];
+    $user->name = $values['email'];
+    if (!empty($values['new_password'])) {
+        $user->pass = user_hash_password($values['new_password']);
+    }
+    user_save($user);
+
+    $profile = profile2_load_by_user($user, 'main');
+    $profile->field_first_name[LANGUAGE_NONE][0]['value'] = $values['first_name'];
+    $profile->field_last_name[LANGUAGE_NONE][0]['value'] = $values['last_name'];
+    $profile->field_phone[LANGUAGE_NONE][0]['value'] = $values['phone'];
+
+    $file = file_save_upload('image', array(), 'public://');
+    if (!empty($file)) {
+        $profile->field_profile_image[LANGUAGE_NONE][0] = (array) $file;
+    }
+
+    profile2_save($profile);
+
+    drupal_set_message(t('Your profile has been saved.'));
+}
+
+function geia_pt_patient_webexercises_delete($patient_id, $exercise_id) {
+    db_delete('patient_exercises')
+        ->condition('uid', $patient_id)
+        ->condition('id', $exercise_id)
+        ->execute();
+    drupal_set_message(t('Exercise was removed from the patient.'));
+    drupal_goto('pt/patient/' . $patient_id . '/webex');
+}

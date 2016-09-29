@@ -1,0 +1,11 @@
+#steps_slider .slider-track-high, #slider12c .slider-track-high {
+	background: green;
+}
+
+#steps_slider .slider-track-low, #slider12c .slider-track-low {
+	background: red;
+}
+
+#steps_slider .slider-selection {
+	background: yellow;
+}

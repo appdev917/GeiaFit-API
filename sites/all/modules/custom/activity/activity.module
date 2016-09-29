@@ -1,0 +1,623 @@
+<?php
+
+
+/**
+* Implementation of hook_theme()
+* 
+*/
+function activity_theme($existing, $type, $theme, $path) {
+	return array(
+		'activity_home' => array(
+			'variables' => array(
+				'images' => FALSE,
+				'calculators' => FALSE,
+				),
+			'template' => 'activity-home',
+		),
+		'theme_daily_calories' => array(
+			'variables' => array(),
+			'template' => 'theme-daily-calories',
+		),
+		'theme_cb_heart_rate' => array(
+			'variables' => array(),
+			'template' => 'theme-cb-heart-rate',
+		),
+		'theme_cb_activity' => array(
+			'variables' => array(),
+			'template' => 'theme-cb-activity',
+		),
+		'theme_bmi_body_mass' => array(
+			'variables' => array(),
+			'template' => 'theme-bmi-body-mass',
+		),
+
+		'theme_program_goal_class' => array(
+			'variables' => array(
+				'program_goal' => FALSE,
+				'program_class' => FALSE,
+			),
+			'template' => 'theme-program-goal-class',
+		),
+
+		'theme_tt_program1' =>array(
+			'variables' => array(),
+			'template' => 'theme-tt-program1',
+		),
+
+		'theme_tt_program2' =>array(
+			'variables' => array(),
+			'template' => 'theme-tt-program2',
+		),
+
+		'theme_tt_program3' =>array(
+			'variables' => array(),
+			'template' => 'theme-tt-program3',
+		),
+
+		'theme_tt_program4' =>array(
+			'variables' => array(),
+			'template' => 'theme-tt-program4',
+		),
+
+		'theme_features' => array(
+			'variables' => array(
+				'features' =>FALSE,
+				),
+			'template' => 'theme-features'
+		),
+
+		'theme_trianers' => array(
+			'variables' => array(
+				'trainer_title' =>FALSE,
+				'trainer_description' => FALSE,
+				'trianers' =>FALSE,
+				),
+			'template' => 'theme-trianer'
+		),
+		
+		'theme_testimonial' => array(
+			'variables' => array(
+				'testimonial_title' =>FALSE,
+				'testimonial_description' => FALSE,
+				'testimonials' =>FALSE,
+				),
+			'template' => 'theme-testimonial'
+		),
+
+		'theme_block_lists' => array(
+			'variables' => array(
+				'title' =>FALSE,
+				'description' =>FALSE,
+				'block_lists' => FALSE,
+				),
+			'template' => 'theme-block-lists',
+		),
+
+		'theme_programs' =>array(
+			'variables' =>array(
+				'all_programs' => FALSE,
+				),
+			'template' => 'theme-programs',
+		),
+
+		
+		'theme_price_plan' => array(
+			'variables' => array(
+				'pricing_plan' => FALSE,
+				'programs_price' =>FALSE,
+				),
+			'template' =>'theme-price-plan',
+		),
+
+		'theme_contact_form' => array (
+			'variables' => array(
+				'contact_form' => FALSE,
+				),
+			'template' =>'theme-contact-form',
+		),
+
+		'theme_activity_footer' => array(
+			'variables' => array(
+				'ac_copyright' =>FALSE,
+				'social_links' =>FALSE,
+				),
+			'template' => 'theme-activity-footer',
+		),
+	);
+}
+
+
+/** 
+* Implementation of hook_menu(). 
+*/ 
+function activity_menu() { 
+	$items['home'] = array( 
+		'title' => 'Home', 
+		'page callback' => 'activity_home_page',  
+		'access callback' => TRUE, 
+		'type' => MENU_CALLBACK,
+		); 
+	return $items;  
+} 
+
+/**
+* Implementation of hook_block_info()
+*/
+function activity_block_info() {
+	
+	$blocks['block_daily_calories'] = array(
+		'info' => t('Daily calories calculator'),
+		);
+	$blocks['block_cb_heart_rate'] = array(
+		'info' => t('Calories Burned By Heart Rate'),
+		);
+	$blocks['block_cb_activity'] = array(
+		'info' => t('Calorie Burned by Activities'),
+		);
+	$blocks['block_bmi_body_mass'] = array(
+		'info' => t('Body mass calculator'),
+		);
+
+	$blocks['block_block_lists'] = array(
+		'info' => t('Block of lists'),
+		);
+	$blocks['block_program_goal_class'] = array(
+		'info' => t('Program goals and classes '),
+		);
+	$blocks['block_tt_program1'] = array(
+		'info' => t('Timetable for program one'),
+		);
+
+	$blocks['block_tt_program2'] = array(
+		'info' => t('Timetable for program two'),
+		);
+
+	$blocks['block_tt_program3'] = array(
+		'info' => t('Timetable for program three'),
+		);
+
+	$blocks['block_tt_program4'] = array(
+		'info' => t('Timetable for program four'),
+		);
+	$blocks['block_features'] = array(
+		'info' => t('Features'),
+		);
+	$blocks['block_testimonials'] = array(
+		'info' => t('Testimonials'),
+		);
+	$blocks['block_trainers'] = array(
+		'info' => t('Trianers'),
+		);
+	$blocks['block_programs'] = array(
+		'info' => t('Programs'),
+		);
+	$blocks['block_pricing'] = array(
+		'info' => t('Pricing plan'),
+		);
+	$blocks['block_contact_form'] = array(
+		'info' => t('Activity Contact form'),
+		);
+	$blocks['activity_block_footer'] = array(
+		'info' => t('Activity footer'),
+		);
+	return $blocks;
+}
+
+/**
+* Implementation of hook_block_configure()
+*/
+function activity_block_configure($delta = '') {
+	$form = array();
+	if($delta =='block_block_lists'){
+		$form['activit_block_lists_title']= array(
+			'#type' => 'textfield',
+			'#title' => t('Block lists title'),
+			'#description' => t('Add title of block of lists'),
+			'#default_value' => variable_get('activit_block_lists_title'),
+
+			);
+		$form['activit_block_lists_body']= array(
+			'#type' => 'textarea',
+			'#title' => t('Block lists body'),
+			'#description' => t('Add description of block of lists'),
+			'#default_value' => variable_get('activit_block_lists_body'),
+
+			);
+
+		$form['activit_add_block_lists']= array(
+			'#type' => 'checkbox',
+			'#title' => t('Add block lists as menu'),
+			'#default_value' => variable_get('activit_add_block_lists'),
+
+			);
+	}
+	if($delta =='activity_block_footer'){
+		$form['activity_copyright'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Add copyright for sites'),
+			'#default_value' => variable_get('activity_copyright'),
+			);
+
+	}
+	if($delta=='block_trainers'){
+		$form['activity_trianer_title'] = array(
+			'#type' =>'textfield' ,
+			'#title' => t('Trianer Title'),
+			'#default_value' => variable_get('activity_trianer_title'),
+			 );
+		$form['activity_trianer_description'] = array(
+			'#type' =>'textarea' ,
+			'#title' => t('Trianer description'),
+			'#default_value' => variable_get('activity_trianer_description'),
+			 );
+	}
+	if($delta=='block_testimonials'){
+		$form['activity_testimonial_title'] = array(
+			'#type' =>'textfield' ,
+			'#title' => t('Testimonial Title'),
+			'#default_value' => variable_get('activity_testimonial_title'),
+			 );
+		$form['activity_testimonial_des'] = array(
+			'#type' =>'textarea' ,
+			'#title' => t('Testimonial description'),
+			'#default_value' => variable_get('activity_testimonial_des'),
+			 );
+	}
+	return $form;
+}
+/**
+* Implementation of hook_block_save()
+*/
+function activity_block_save($delta = '', $edit = array()) {
+
+	if($delta =='block_block_lists'){
+		variable_set('activit_block_lists_title',$edit['activit_block_lists_title']);
+
+		variable_set('activit_block_lists_body',$edit['activit_block_lists_body']);
+
+		variable_set('activit_add_block_lists',$edit['activit_add_block_lists']);
+	}
+	if($delta =='block_trainers'){
+		variable_set('activity_trianer_title',$edit['activity_trianer_title']);
+		variable_set('activity_trianer_description',$edit['activity_trianer_description']);
+	}
+	if($delta =='block_testimonials'){
+		variable_set('activity_testimonial_title',$edit['activity_testimonial_title']);
+		variable_set('activity_testimonial_des',$edit['activity_testimonial_des']);
+	}
+	if($delta =='activity_block_footer'){
+		variable_set('activity_copyright',$edit['activity_copyright']);
+	}
+}
+/**
+* Implementation of hook_block_view() sowailem_bedbreakfast_widget_
+*/
+function activity_block_view($delta = '') {
+	//drupal_add_js();
+	//drupal_add_css();
+	$block = array();
+	switch ($delta) {
+		case 'block_daily_calories':
+			$block['content'] = array(
+				'#theme' => 'theme_daily_calories',
+				);
+			//drupal_add_js();
+			//drupal_add_css();
+			break;
+		case 'block_cb_heart_rate':
+			$block['content'] = array(
+				'#theme' => 'theme_cb_heart_rate',
+				);
+			break;
+		case 'block_cb_activity':
+			$block['content'] = array(
+				'#theme' => 'theme_cb_activity',
+				);
+			break;
+		case 'block_bmi_body_mass':
+			$block['content'] = array(
+				'#theme' => 'theme_bmi_body_mass',
+				);
+			break;
+		case 'block_program_goal_class':
+			$block['content'] = array(
+				'#theme' => 'theme_program_goal_class',
+				'#program_goal' => activity_get_nodes_by_fieldrefrence('program_goal','field_program_title',arg(1)),
+				'#program_class' => activity_get_nodes_by_fieldrefrence('program_class','field_program_title',arg(1)),
+				);
+			drupal_add_js(drupal_get_path('module', 'activity') .'/progress-bar.js');
+			break;
+		case 'block_block_lists':
+			$block['content'] = array(
+				'#theme' => 'theme_block_lists',
+				'#title' => variable_get('activit_block_lists_title'),
+				'#description' => variable_get('activit_block_lists_body'),
+				'#block_lists' => activity_get_nodes('block_list'),
+				);
+			break;
+		case 'block_tt_program1':
+			$block['content']= array(
+				'#theme' => 'theme_tt_program1'
+				);
+		case 'block_tt_program2':
+			$block['content']= array(
+				'#theme' => 'theme_tt_program2'
+				);
+		case 'block_tt_program3':
+			$block['content']= array(
+				'#theme' => 'theme_tt_program3'
+				);
+		case 'block_tt_program4':
+			$block['content']= array(
+				'#theme' => 'theme_tt_program4'
+				);
+			break;
+		case 'activity_block_footer':
+			$block['content'] = array(
+				'#theme' => 'theme_activity_footer',
+				'#ac_copyright' => variable_get('activity_copyright'),
+				'#social_links' => activity_get_nodes('social_media'),
+				);
+			break;
+		case 'block_features':
+			$block['content'] =array(
+				'#theme' => 'theme_features',
+				'#features' => activity_get_nodes('feature'),
+				);
+			break;
+		case 'block_trainers':
+			$block['content'] =array(
+				'#theme' => 'theme_trianers',
+				'#trainer_title' => variable_get('activity_trianer_title'),
+				'#trainer_description' => variable_get('activity_trianer_description'),
+				'#trianers' => activity_get_nodes('our_trainer'),
+				);
+			break;
+		case 'block_testimonials':
+			$block['content'] =array(
+				'#theme' => 'theme_testimonial',
+				'#testimonial_title' => variable_get('activity_testimonial_title'),
+				'#testimonial_description' => variable_get('activity_testimonial_des'),
+				'#testimonials' => activity_get_nodes('testimonial'),
+				);
+			break;
+		case 'block_programs':
+			$all_program = activity_get_nodes('program');
+			$block['content'] =array(
+				'#theme' => 'theme_programs',
+				'#all_programs' => $all_program,
+				);
+			break;
+		case 'block_pricing':
+			$programs_price = activity_get_nodes('program');
+			$block['content'] = array(
+				'#theme' => 'theme_price_plan',
+				'#pricing_plan' => activity_get_nodes('price_plan'),
+				'#programs_price' => $programs_price,
+				);
+			break;
+		case 'block_contact_form':
+			$block['content'] = array(
+				'#theme' => 'theme_contact_form',
+				'#contact_form' => drupal_get_form('activity_contact_form'),
+				);
+			break;
+	}
+
+	return $block;
+}
+
+
+function activity_home_page(){
+	$output = array();
+	$images = array();
+	$nodes = activity_get_nodes('main_slide_show');
+	foreach ($nodes['nodes'] as $key => $image) {
+		//
+		if(is_array($image)){
+			$images[] = file_create_url($image['field_image']['#object']->field_image['und'][0]['uri']);
+		}
+	}
+	//dsm($nodes);
+	$calculators = activity_get_nodes('calculator');
+
+	$output['content'] = array(
+		'#theme' => 'activity_home',
+		'#images' => $images,
+		'#calculators' => $calculators,
+	);
+	return $output;
+}
+
+function activity_get_nodes($type='page'){
+	$contents = array();
+		$query = db_select('node', 'n');
+		$nids = $query
+			->fields('n', array('nid'))
+			->condition('type',$type)
+			->condition('status', 1)
+			->orderBy('created', 'DESC')
+			->addTag('node_access')
+			->execute()
+			->fetchCol();
+
+		if (!empty($nids)) {
+			$nodes = node_load_multiple($nids);
+			$contents += node_view_multiple($nodes,'full');
+		}
+	//dsm($contents);
+	return $contents;
+
+}
+
+function activity_get_nodes_by_fieldrefrence($type='page',$fieldrefrence, $target_id){
+	$query = new EntityFieldQuery();
+
+	$query->entityCondition('entity_type', 'node')
+		->entityCondition('bundle', $type)
+		->propertyCondition('status', NODE_PUBLISHED)
+		->fieldCondition($fieldrefrence, 'target_id', $target_id, '=');
+
+	$result = $query->execute();
+
+	$nodes_items = array();
+
+	if (isset($result['node'])) {
+		$nodes_items_nids = array_keys($result['node']);
+		$nodes_items = entity_load('node', $nodes_items_nids);
+		//$contents = node_view_multiple($nodes_items,'full');
+	}
+	return $nodes_items;
+}
+function activity_contact_form(){
+	$form =array();
+	$form['first_name']=array(
+		'#type' => 'textfield',
+		'#title' => t('First name'),
+		'#description' => t('Enter first name'),
+		);
+	$form['last_name']=array(
+		'#type' => 'textfield',
+		'#title' => t('Last name'),
+		'#description' => t('Enter last name'),
+		);
+	$form['email']=array(
+		'#type' => 'textfield',
+		'#title' => t('Email'),
+		'#description' => t('Enter email'),
+		);
+	$form['phone_number']=array(
+		'#type' => 'textfield',
+		'#title' => t('phone number'),
+		'#description' => t('Enter phone number'),
+		);
+	$form['message']=array(
+		'#type' => 'textarea',
+		'#title' => t('Message'),
+		'#description' => t('Enter message'),
+		);
+	$form['validate']=array(
+		'#type' => 'textfield',
+		'#title' => t('validate'),
+		'#description' => t('Are you humen? 3+1= '),
+		);
+	$form['submit']=array(
+		'#type' => 'submit',
+		'#title' => t('Submit'),
+		'#description' => t('Enter your submit'),
+		);
+	//dsm($form);
+	return $form;
+}
+function activity_contact_form_validate($form, $form_state){
+
+	$fname = $form_state['first_name']; 
+	$lname = $form_state['last_name'];
+	$email = $form_state['email'];
+	$phone_number = $form_state['phone_number'];
+	$validate =$form_state['validate'];
+	$message = $form_state['message'];
+
+	//drupal_set_message(t('An error occurred and processing did not complete.'), 'error');
+
+	if(trim($fname) == '' || trim($lname) == '') {
+
+		//exit('<div class="error_message">Attention! You must enter your name.</div>');
+		drupal_set_message(t('Attention! You must enter your first name and last name.'), 'error');
+	
+
+	} else if(trim($fname) == 'Name' || trim($lname) == 'Name') {
+
+		//exit('<div class="error_message">Attention! You must enter your name.</div>');
+		drupal_set_message(t('Attention! You must enter your first name and last name.'), 'error');
+
+	} else if(trim($email) == 'Email') {
+
+		//exit('<div class="error_message">Attention! Please enter a valid email address.</div>');
+		drupal_set_message(t('Attention! Please enter a valid email address.'), 'error');
+
+	} else if(!email_validate($email)) {
+
+		//exit('<div class="error_message">Attention! You have entered an invalid e-mail address.</div>');
+		drupal_set_message(t('Attention! You have entered an invalid e-mail address.'), 'error');
+
+	} else if(trim($message) == 'Messagse') {
+
+		//exit('<div class="error_message">Attention! Please enter your message.</div>');
+		drupal_set_message(t('Attention! Please enter your message.'), 'error');
+
+	} else if(trim($message) == '') {
+
+		//exit('<div class="error_message">Attention! Please enter your message.</div>');
+		drupal_set_message(t('Attention! Please enter your message.'), 'error');
+
+	}
+
+}
+
+
+function activity_contact_form_submit($form , $form_state){
+	
+	$fname = $form_state['first_name']; 
+	$lname = $form_state['last_name'];
+	$email = $form_state['email'];
+	$phone_number = $form_state['phone_number'];
+	$validate =$form_state['validate'];
+	$message = $form_state['message'];
+
+
+ if(get_magic_quotes_gpc()) { 
+ 	$message = stripslashes($message);
+
+ }
+
+$SpamErrorMessage = "No Website-URLs permitted!";
+if (preg_match("/http/i", "$fname")) {
+	echo "$SpamErrorMessage"; exit();
+}
+if (preg_match("/http/i", "$lname")) {
+	echo "$SpamErrorMessage"; exit();
+}
+if (preg_match("/http/i", "$email")) {
+	echo "$SpamErrorMessage"; exit();
+}
+if (preg_match("/http/i", "$message")) {
+	echo "$SpamErrorMessage"; exit();
+}
+
+
+
+$address = 'info@yourdomain.com';
+
+
+
+$e_subject = 'You\'ve been contacted by ' . $fname . '' . $lname . '.';
+
+$e_body = "You have been contacted by $fname $lname from your contact form, their additional message is as follows." . "\r\n" . "\r\n";
+
+$e_content = "\"$message\"" . "\r\n" . "\r\n";
+
+$e_reply = "You can contact $name via email, $email";
+
+
+
+$msg = wordwrap( $e_body . $e_content . $e_reply, 70 );
+
+
+
+$headers = "From: $email" . "\r\n";
+
+$headers .= "Reply-To: $email" . "\r\n";
+
+$headers .= "MIME-Version: 1.0" . "\r\n";
+
+$headers .= "Content-type: text/plain; charset=utf-8" . "\r\n";
+
+$headers .= "Content-Transfer-Encoding: quoted-printable" . "\r\n";
+
+
+
+if(mail($address, $e_subject, $msg, $headers)) { 
+	echo "<fieldset><div id='success_page'><h3>Email Sent Successfully.</h3><p>Thank you $name, your message has been submitted to us.</p></div></fieldset>"; 
+	}
+}

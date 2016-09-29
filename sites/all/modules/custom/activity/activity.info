@@ -1,0 +1,4 @@
+name= Activity
+description= Activity Core module
+core= 7.x
+package= Activity

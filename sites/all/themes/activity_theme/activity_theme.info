@@ -1,0 +1,47 @@
+ Theme Info -----------------------------------------------------------------
+; Required information about the theme.
+
+name = Activity
+description  = Activity is a highly-optimized, extensible and responsive HTML5 base theme.
+;screenshot = img/seerutea.png
+core = 7.x
+
+engine = phptemplate
+version = 1.0.0
+
+
+; Stylesheets ---------------------------------------------------------------
+
+stylesheets[all][] = css/bootstrap.css
+stylesheets[all][] = css/bootstrap.min.css
+stylesheets[all][] = css/style.css
+stylesheets[all][] = css/menu.css
+stylesheets[all][] = fontello/css/fontello.css
+stylesheets[all][] = css/flexslider.css
+stylesheets[all][] = css/slider.css
+stylesheets[all][] = css/owl.carousel.css
+stylesheets[all][] = css/owl.theme.css
+
+
+; Javascript ---------------------------------------------------------------
+; This is the core Seerutea javascript.
+
+scripts[] = js/jquery-1.10.min.js
+scripts[] = js/jquery.flexslider.js
+scripts[] = js/slider_func.js
+scripts[] = js/calories_calculators.js
+scripts[] = js/bootstrap.min.js
+scripts[] = js/retina-replace.min.js
+scripts[] = js/jquery.placeholder.js
+scripts[] = js/functions.js
+
+
+; Regions -------------------------------------------------------------------
+regions[header] = Header
+regions[sidebar_left] = Sidebar left
+regions[sidebar_right] = Sidebar right
+regions[content] = Content
+regions[features] = Features
+regions[footer] = Footer
+regions[page_top] = Page top
+regions[page_bottom] = Page bottom

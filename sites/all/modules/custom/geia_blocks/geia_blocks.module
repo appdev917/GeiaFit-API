@@ -1,0 +1,292 @@
+<?php
+
+
+/**
+* Implementation of hook_menu
+*/
+
+function geia_blocks_menu() {
+
+   	 $items['get/posture'] = array(
+   	        'title' => t('Get Posture'),
+   	        'page callback' => 'geia_blocks_get_posture',
+   	        'access callback' => TRUE,
+			'weight' => 6,
+   	  );  
+      $items['admin/email'] = array(
+		'title' => t('New Patient Email'),
+  		'page callback' => 'drupal_get_form',
+  		'page arguments' =>  array('geia_blocks_new_patient_email_form'),
+  		'access callback' => TRUE,
+  		'type' => MENU_LOCAL_TASK,
+ 			'weight' => 6,
+     ); 
+	  
+	  
+    return $items;
+
+}
+
+function geia_blocks_new_patient_email_form($form, &$form_state){
+	
+	
+	$email = variable_get('new_patient_email', array('value' => '', 'format' => filter_default_format()));
+	
+	$form['new_patient_email'] = array(
+	    '#type' => 'text_format',
+	    '#title' => t('Description'),
+	    '#default_value' => $email['value'],
+	    '#weight' => 0,
+		'#format' => $email['format'],
+	  );
+	  
+	  $form['email'] = array(
+		  '#type' => 'textfield',
+		  '#title' =>  t('Send Test Email')
+      );
+	  
+	  $form['submit'] = array(
+	    '#type' => 'submit',
+	    '#value' => 'Update',
+	  );
+	
+	
+	return $form;
+}
+
+function geia_blocks_new_patient_email_form_submit($form, &$form_state){
+	global $user;
+	$user = user_load($user->uid);
+	
+	if (isset($form_state['values']['new_patient_email'])) {
+	    variable_set('new_patient_email', $form_state['values']['new_patient_email']);
+    
+	    drupal_set_message(t('The email template was saved.'));
+	  }
+	  
+	  if(trim($form_state['values']['email']) != ''){
+		  
+	      drupal_mail('geia_blocks', 'account_created', $form_state['values']['email'], user_preferred_language($user), array(
+	          'firstname' => 'FirstName',
+	          'lastname' => 'LastName',
+	          'email' => 'Test@test.com',
+	          'password' => '123456',
+	      ));
+		 drupal_set_message(t('Test email was sent.'));
+		
+	  }
+}
+
+
+
+
+function geia_blocks_mail($key, &$message, $params) {
+    switch ($key) {
+        case 'account_created':
+		    $body = variable_get('new_patient_email','');
+			$new_patient = $body['value'];
+            $langcode = $message['language']->language;
+			
+		    $headers = array(
+		      'MIME-Version' => '1.0',
+		      'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+		      'Content-Transfer-Encoding' => '8Bit',
+		      'X-Mailer' => 'Drupal'
+		    );
+		    foreach ($headers as $key => $value) {
+		      $message['headers'][$key] = $value;
+		    }
+			
+			
+			
+            $message['subject'] = t('Test Email from Admin');
+            $message['body'][] = t($new_patient, array(
+                '@firstname' => $params['firstname'],
+                '@lastname' => $params['lastname'],
+                '@email' => $params['email'],
+                '@password' => $params['password'],
+            ), array('langcode' => $langcode));
+            break;
+    }
+}
+
+
+function geia_blocks_get_posture(){
+	
+	// $node = node_load(11);
+// 	print_r($node);die();
+	
+	$post_dump = print_r($_POST, TRUE);
+	$files_dump = print_r($_FILES, TRUE);
+	
+	//print $post_dump;
+	//print $files_dump;
+	
+	$fp = fopen(DRUPAL_ROOT.'/request.log', 'a');
+	fwrite($fp, $post_dump);
+	fwrite($fp, $files_dump);
+	fclose($fp);
+	
+
+	  $node = new stdClass();
+	  
+	  $node->type = "posture";
+	  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+	  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+	  
+	
+	foreach($_FILES as $ufile){
+		
+
+		$image_name = $ufile['name'];
+		//$imageData = $ufile['tmp_name'];  
+	    $imageData = file_get_contents($ufile['tmp_name'], FILE_USE_INCLUDE_PATH);
+		//print_r($imageData);die();
+		$file = file_save_data($imageData, 'public://'.$image_name, FILE_EXISTS_REPLACE);
+		$file->display = 1;
+		$node->field_posture_files['und'][] = (array)$file;
+		
+		if($image_name == 'screening.json'){
+			$data = json_decode($imageData);
+			$patient_id = (string)$data->patientID;
+			$user = user_load_by_mail($patient_id);
+			$profile = profile2_load_by_user($user,'main');
+			$username = $profile->field_first_name['und'][0]['value'].' '.$profile->field_last_name['und'][0]['value'];
+		}
+		
+	}
+	
+    $node->uid = $user->uid;
+    $node->title = "POSTURE FOR ".$username;
+	$node->field_patient['und'][0]['uid'] = $user->uid;
+	
+	
+	$node = node_submit($node); // Prepare node for saving
+	node_save($node);
+	
+	return "OK DATA UPLOADED";
+}
+
+
+
+
+/**
+ * Implements hook_block_info().
+ */
+function geia_blocks_block_info() {
+  $blocks = array();
+  $blocks['geia_user_register'] = array(
+    'info' => t('Custom User Register Block'),
+  );
+  $blocks['geia_user_patient_chat'] = array(
+    'info' => t('Custom Patient Chat Block'),
+  );
+  
+  $blocks['geia_patient_info'] = array(
+    'info' => t('Custom Patient Info Block'),
+  );
+
+  return $blocks;
+}
+function geia_blocks_block_view($delta = '') {
+	$block = array();
+    switch ($delta) {
+    case 'geia_user_register':
+          $block['subject'] = '';
+          $block['content'] =  drupal_get_form('user_register_form');
+		  break;
+    case 'geia_patient_info':
+           $block['subject'] = '';
+           $block['content'] = geia_blocks_get_patient_info();
+		   break;
+      }
+	 return $block;
+}
+
+function geia_blocks_theme() {
+	return array(
+         'patient_info' => array(
+         	'template' => 'includes/patient_info',
+		 	'arguments' => array('data' => NULL),
+		 ),
+
+	);
+}
+
+
+
+function geia_blocks_get_patient_info(){
+	global $base_url;
+	
+	drupal_add_css(drupal_get_path('module', 'geia_blocks') . '/includes/patient_info.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
+	
+	if (arg(0) == 'pt' && is_numeric(arg(2))) {
+		$pid = arg(2);
+	    $patient = user_load($pid);
+		$p_account = profile2_load_by_user($patient,'main');
+		
+		
+		$goals = array();
+		if(isset($p_account->field_goals['und'])){
+		    foreach($p_account->field_goals['und'] as $goal){
+		  	  $goals[] = $goal['value'];
+		    }
+		}
+	   
+	    if(isset($p_account->field_profile_image['und'])){
+	  	    //$image = $base_url."/sites/default/files/styles/user_profile/".$p_account->field_profile_image['und'][0]['filename'];
+			$image_uri = $p_account->field_profile_image['und'][0]['uri'];
+			
+	    }else{
+	        $image_uri = 'public://default-avatar.jpg';
+	    }
+  
+	    if(isset($p_account->field_total_gems['und'][0]['value'])){
+	       $gems = $p_account->field_total_gems['und'][0]['value'];
+	    }else{
+	       $gems = 0;
+	    }
+		
+		
+		if(!empty($p_account->field_gender['und']) && $p_account->field_gender['und'][0]['value'] == 1){
+			$gender = 'Female';
+		}else{
+			$gender = 'Male';
+		}
+		
+        if (empty($p_account->field_date_of_birth[LANGUAGE_NONE])) {
+            $date_of_birth = null;
+        } else {
+            $date_of_birth = $p_account->field_date_of_birth[LANGUAGE_NONE][0]['value'];
+        }
+
+		$data = array(
+		    "email" => $patient->mail,
+		    "first_name" => $p_account->field_first_name['und'][0]['value'],
+		    "last_name" => $p_account->field_last_name['und'][0]['value'],
+		    "dob" => $date_of_birth,
+		    "gender" => $gender,
+		    "image_uri" => $image_uri,
+			"style" => 'user_profile',
+		    "goals" => $goals,
+		    "gems" => $gems,
+			
+		);
+		return theme('patient_info',$data);
+	}
+	
+}
+
+
+
+function _test_time(){
+  	
+	  $user = user_load(22);
+   
+	  $rec_id = $user->field_therapist['und'][0]['uid'];
+	  
+	  print_r($user->field_therapist);
+	
+ }
+  
+  

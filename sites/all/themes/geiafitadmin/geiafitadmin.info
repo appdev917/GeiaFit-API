@@ -1,0 +1,124 @@
+name = GeiaFit Bootstrap Sub-Theme (Geiafit)
+description = Uses the Bootstrap Framework LESS source files and must be compiled (not for beginners).
+core = 7.x
+base theme = bootstrap
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; SimplyTest.me
+;;;;;;;;;;;;;;;;;;;;;
+
+simplytest_dependencies[] = jquery_update
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+
+regions[navigation]     = 'Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Primary'
+regions[sidebar_second] = 'Secondary'
+regions[footer]         = 'Footer'
+regions[page_top]       = 'Page top'
+regions[page_bottom]    = 'Page bottom'
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Stylesheets
+;;;;;;;;;;;;;;;;;;;;;
+
+stylesheets[all][] = css/bootstrap.min.css
+stylesheets[all][] = css/font-awesome.min.css
+stylesheets[all][] = css/main.css
+stylesheets[all][] = css/my-custom-styles.css
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Scripts
+;;;;;;;;;;;;;;;;;;;;;
+
+scripts[] = 'js/jquery/jquery-2.1.0.min.js'
+scripts[] = 'js/jquery-ui/jquery-ui-1.10.4.custom.js'
+scripts[] = 'js/bootstrap/bootstrap.js'
+scripts[] = 'js/plugins/modernizr/modernizr.js'
+scripts[] = 'js/plugins/bootstrap-tour/bootstrap-tour.custom.js'
+scripts[] = 'js/king-common.js'
+scripts[] = 'js/geiaadmin.js'
+
+
+
+scripts[] = 'js/plugins/datatable/jquery.dataTables.min.js'
+scripts[] = 'js/plugins/datatable/exts/dataTables.colVis.bootstrap.js'
+scripts[] = 'js/plugins/datatable/exts/dataTables.colReorder.min.js'
+scripts[] = 'js/plugins/datatable/exts/dataTables.tableTools.min.js'
+scripts[] = 'js/plugins/datatable/dataTables.bootstrap.js'
+scripts[] = 'js/plugins/jqgrid/jquery.jqGrid.min.js'
+scripts[] = 'js/plugins/jqgrid/i18n/grid.locale-en.js'
+scripts[] = 'js/plugins/jqgrid/jquery.jqGrid.fluid.js'
+scripts[] = 'js/plugins/bootstrap-datepicker/bootstrap-datepicker.js'
+scripts[] = 'js/plugins/jquery-mousewheel/jquery.mousewheel.js'
+scripts[] = 'js/plugins/jqallrangesliders/jQAllRangeSliders-min.js'
+scripts[] = 'js/plugins/stat/jquery.easypiechart.min.js'
+scripts[] = 'js/plugins/select2/select2.min.js'
+
+
+scripts[] = 'js/king-common.js'
+scripts[] = 'js/king-table.js'
+scripts[] = 'js/king-chart-stat.js'
+scripts[] = 'js/king-components.js'
+
+
+;;;;;;;;;;;;
+;;; STATS
+;;;;;;;;;;;;
+
+scripts[] = 'js/plugins/stat/flot/jquery.flot.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.orderBars.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.pie.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.resize.min.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.selection.min.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.time.min.js'
+scripts[] = 'js/plugins/stat/flot/jquery.flot.tooltip.min.js'
+
+
+
+
+
+; Disable BootstrapCDN so the compiled LESS source files can be used.
+settings[bootstrap_cdn] = ''
+
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Breakpoints
+;;;;;;;;;;;;;;;;;;;;;
+breakpoints[screen-xs-max] = (max-width: 767px)
+breakpoints[screen-sm-min] = (min-width: 768px)
+breakpoints[screen-sm-max] = (max-width: 991px)
+breakpoints[screen-md-min] = (min-width: 992px)
+breakpoints[screen-md-max] = (max-width: 1199px)
+breakpoints[screen-lg-min] = (min-width: 1200px)
+; Multipiers
+multipliers[screen-xs-max][] = 1.5x
+multipliers[screen-xs-max][] = 2x
+multipliers[screen-sm-min][] = 1.5x
+multipliers[screen-sm-min][] = 2x
+multipliers[screen-sm-max][] = 1.5x
+multipliers[screen-sm-max][] = 2x
+multipliers[screen-md-min][] = 1.5x
+multipliers[screen-md-min][] = 2x
+multipliers[screen-md-max][] = 1.5x
+multipliers[screen-md-max][] = 2x
+multipliers[screen-lg-min][] = 1.5x
+multipliers[screen-lg-min][] = 2x
+
+; Information added by Drupal.org packaging script on 2016-03-01
+version = "7.x-3.5"
+core = "7.x"
+project = "bootstrap"
+datestamp = "1456870747"
+

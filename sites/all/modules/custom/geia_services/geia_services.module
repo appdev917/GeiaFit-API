@@ -1,0 +1,1290 @@
+<?php
+
+/**
+ * Implements hook_services_resources().
+ */
+function geia_services_services_resources() {
+  $resources = array();
+
+  $resources['profile'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns users profile.',
+              'callback' => 'geia_services_profile_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+
+          'update' => array(
+              'help' => 'Updates a single profile.',
+              'callback' => 'geia_services_profile_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+              'access callback' => 'geia_services_profile_update_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'The profile data to update.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+
+          'delete' => array(
+              'help' => 'Deletes a single profile by the user id',
+              'callback' => 'geia_services_profile_delete',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+              'access callback' => 'geia_services_profile_update_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+          // Define the create callback for a POST to /address. //will need to use admin access
+          'create' => array(
+              'help' => 'Creates a new profile for the current API user.',
+              'callback' => 'geia_services_usercreate',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+              'access callback' => 'geia_services_profile_update_access',
+              'args' => array(
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'data for new user profile',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+
+      ),
+	  'actions' => array(
+          'therapists' => array(
+            'help' => 'List All Geia Therapists',
+            'callback' => 'geia_services_therapists',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+          ),
+          'logout' => array(
+            'help' => 'Logsout the user',
+            'callback' => 'geia_services_logout',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'user uid',
+                ),
+             ),
+          ),
+          'pwdreset' => array(
+            'help' => 'Password Reset.',
+            'callback' => 'geia_services_pwdreset',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access arguments' => array('access content'),
+			//'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+              array(
+                'name' => 'email',
+                'type' => 'string',
+                'description' => 'A valid username email address',
+                'source' => array('data' => 'email'),
+                'optional' => FALSE,
+              ),
+            ),
+          ),
+          'assigntherapists' => array(
+            'help' => 'Assign a new therapist to a user',
+            'callback' => 'geia_services_assign_therapist',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the user.',
+                ),
+              array(
+                'name' => 'tid',
+                'optional' => FALSE,
+                'source' => array('path' => 2),
+                'type' => 'int',
+                'description' => 'The uid of the therapist to assign.',
+              ),
+            ),
+          ),
+          'createpatient' => array(
+            'help' => 'Create New Patient.',
+            'callback' => 'geia_services_usercreate',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the therapist to add the new user to.',
+                ),
+              array(
+                'name' => 'data',
+                'optional' => FALSE,
+                'source' => 'data',
+                'type' => 'array',
+                'description' => 'Data to create User',
+              ),
+            ),
+          ),
+          'mypatients' => array(
+            'help' => 'List Patients.',
+            'callback' => 'geia_services_mypatients',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the therapist.',
+                ),
+            ),
+          ),
+          'profileimage' => array(
+            'help' => 'Update Profile Image.',
+            'callback' => 'geia_services_profile_image',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/profile'),
+			'access callback' => 'geia_services_profile_update_access',
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the user.',
+                ),
+              array(
+                'name' => 'data',
+                'optional' => FALSE,
+                'source' => 'data',
+                'type' => 'array',
+                'description' => 'User Profile image.',
+              ),
+            ),
+          ),
+        ),
+  );
+
+  $resources['survey'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns survery questions.',
+              'callback' => 'geia_services_survey_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/survey'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'survey type SF38',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Saves survey answers.',
+              'callback' => 'geia_services_survey_save_answers',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/survey'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid for the user that filled out the survery',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'simple request to post user survery aswers.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+  $resources['posture'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Send Posture Info.',
+              'callback' => 'geia_services_posture',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/posture'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+			  ),
+          ),
+          'create' => array(
+              'help' => 'Receive Patients files to generate report.',
+              'callback' => 'geia_services_posture_create',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/posture'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'User Iuid to create a posture report',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'Data type images or video',
+                      'optional' => TRUE,
+                      'source' => array('path' => 1),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'Posture images.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+
+  $resources['webex'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Sends Latest WebEx RX.',
+              'callback' => 'geia_services_webex_rx',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+			  ),
+          ),
+          // Define the create callback for a POST to new custom exercise
+          'create' => array(
+              'help' => 'Creates a new custom exercise for the current API user.',
+              'callback' => 'geia_services_webex_create',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'User uid to update exercises',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'Exercises Data.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Update custom exercise for the current API user.',
+              'callback' => 'geia_services_webex_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+              'access callback' => 'geia_services_webex_update_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'User uid to update exercise',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'Exercise Data.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+          'delete' => array(
+              'help' => 'Delete custom exercise from the current API user.',
+              'callback' => 'geia_services_webex_delete',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+              'access callback' => 'geia_services_webex_delete_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'peid',
+                      'type' => 'int',
+                      'description' => 'User uid to delete exercise',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'peid',
+                      'type' => 'int',
+                      'description' => 'Patient exercise id',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+              ),
+          ),
+	  ),
+	  'actions' => array(
+          'record' => array(
+            'help' => 'record exercise',
+            'callback' => 'geia_services_webex_record',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+			'access arguments' => array('access content'),
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the user.',
+                ),
+                array(
+                  'name' => 'peid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 2),
+                  'type' => 'int',
+                  'description' => 'Prescription ID.',
+                ),
+                array(
+                  'name' => 'date',
+                  'optional' => FALSE,
+                  'source' => array('path' => 3),
+                  'type' => 'int',
+                  'description' => 'Date done.',
+                ),
+             ),
+          ),
+		  //list pts exlib
+          'ptlib' => array(
+            'help' => 'Users Exercise Library',
+            'callback' => 'geia_services_webex_ptlib',
+			'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/webex'),
+			'access arguments' => array('access content'),
+            'args' => array(
+                array(
+                  'name' => 'uid',
+                  'optional' => FALSE,
+                  'source' => array('path' => 1),
+                  'type' => 'int',
+                  'description' => 'The uid of the user.',
+                ),
+             ),
+          ),
+		  
+	  ),
+
+
+  );
+
+  $resources['characteristics'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns vitals.',
+              'callback' => 'geia_services_characteristics_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/characteristics'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Updates characteristics/vitals.',
+              'callback' => 'geia_services_characteristics_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/characteristics'),
+			  'access callback' => 'geia_services_characteristics_index_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'The characteristics data to update.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+  $resources['outcome_measures'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Return Users Outcome Meassures Questions.',
+              'callback' => 'geia_services_outcome_measures_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/outcome_measures'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Collect Question Data.',
+              'callback' => 'geia_services_outcome_measures_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/outcome_measures'),
+			  'access callback' => 'geia_services_outcome_measures_index_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'The outcome meassures data to update.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+  $resources['log'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns Logs.',
+              'callback' => 'geia_services_logs_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/logs'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'log type, activity, characterstis, health_points',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+                  array(
+                      'name' => 'start',
+                      'type' => 'int',
+                      'description' => 'offset start',
+                      'optional' => TRUE,
+                      'source' => array('path' => 2),
+                  ),
+                  array(
+                      'name' => 'end',
+                      'type' => 'int',
+                      'description' => 'offset end',
+                      'optional' => TRUE,
+                      'source' => array('path' => 3),
+                  ),
+
+              ),
+          ),
+          'update' => array(
+              'help' => 'Updates Logs.',
+              'callback' => 'geia_services_logs_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/logs'),
+              'access callback' => 'geia_services_logs_index_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'log type',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'The log data to update.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+
+  $resources['challenge'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Sends Latest DAily Personal Challenge.',
+              'callback' => 'geia_services_challenge',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/challenge'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+			  ),
+          ),
+	  ),
+  );
+  $resources['content'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Sends CMS content to app.',
+              'callback' => 'geia_services_content',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/content'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'Conent Type',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+			  ),
+          ),
+	  ),
+  );
+
+
+  $resources['messages'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns Messages.',
+              'callback' => 'geia_services_messages_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/messages'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user id',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'timestamp',
+                      'type' => 'int',
+                      'description' => 'timestamp',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+
+              ),
+          ),
+          'update' => array(
+              'help' => 'Creates Message.',
+              'callback' => 'geia_services_messages_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/messages'),
+			  'access callback' => 'geia_services_logs_index_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid that is creating the message',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'Message.',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+  $resources['goals'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns users goals.',
+              'callback' => 'geia_services_goals_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/goals'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'goal type',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Update user goals.',
+              'callback' => 'geia_services_goals_update',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/goals'),
+              'access callback' => 'geia_services_goals_update_access',
+              'access arguments append' => TRUE,
+              'args' => array(
+                  array(
+                      'name' => 'type',
+                      'type' => 'string',
+                      'description' => 'goal type',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 1),
+                  ),
+                  array(
+                      'name' => 'data',
+                      'type' => 'array',
+                      'description' => 'data',
+                      'optional' => FALSE,
+                      'source' => 'data',
+                  ),
+              ),
+          ),
+	  ),
+  );
+  $resources['notifications'] = array(
+      // '#api_version' => 3001,
+      'operations' => array(
+          'index' => array(
+              'help' => 'Returns users notifications.',
+              'callback' => 'geia_services_notifications_index',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/notifications'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'uid',
+                      'type' => 'int',
+                      'description' => 'user uid',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+          'update' => array(
+              'help' => 'Set Message as read',
+              'callback' => 'geia_services_notifications_read',
+              'file' => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/notifications'),
+              'access arguments' => array('access content'),
+              'args' => array(
+                  array(
+                      'name' => 'nid',
+                      'type' => 'int',
+                      'description' => 'notofication ID',
+                      'optional' => FALSE,
+                      'source' => array('path' => 0),
+                  ),
+              ),
+          ),
+	  ),
+  );
+
+
+  $resources['bt'] = [
+        'operations' => [
+            'index' => [
+                'help'                      => 'Work with BrainTree API',
+                'callback'                  => 'bt_api',
+                'file'                      => array('type' => 'inc', 'module' => 'geia_services', 'name' => 'resources/bt'),
+                //'access arguments'        => array('access content'),
+                'access arguments'          => array('access content'),
+                'args' => [
+                    [
+                        'name' => 'action',
+                        'type' => 'string',
+                        'description' => 'action',
+                        'optional' => FALSE,
+                        'source' => array('path' => 0),
+                    ],
+                    [
+                        'name' => 'param1',
+                        'type' => 'string',
+                        'description' => 'param1',
+                        'optional' => TRUE,
+                        'source' => array('path' => 1),
+                    ],
+                    [
+                        'name' => 'param2',
+                        'type' => 'string',
+                        'description' => 'param2',
+                        'optional' => TRUE,
+                        'source' => array('path' => 2),
+                    ],
+                    [
+                        'name' => 'param3',
+                        'type' => 'string',
+                        'description' => 'param3',
+                        'optional' => TRUE,
+                        'source' => array('path' => 3),
+                    ],
+                ],
+            ]
+        ],
+  ];
+  return $resources;
+
+}
+
+function _test(){
+
+
+	$json = '[
+  {
+    "day": "0",
+    "on": "1"
+  },
+  {
+    "day": "1",
+    "on": "0"
+  },
+  {
+    "day": "2",
+    "on": "1"
+  },
+  {
+    "day": "3",
+    "on": "0"
+  },
+  {
+    "day": "4",
+    "on": "0"
+  },
+  {
+    "day": "5",
+    "on": "1"
+  },
+  {
+    "day": "6",
+    "on": "0"
+  }
+]';
+
+$week_days = json_decode($json);
+
+
+$weekly = array(
+	'sun' => 0,
+	'mon' => 0,
+	'tue' => 0,
+	'wed' => 0,
+	'thu' => 0,
+	'fri' => 0,
+	'sat' => 0
+);
+
+foreach($week_days as $day){
+
+	print $day->day;
+	print $day->on;
+
+    switch ($day->day) {
+        case "0":
+		    if($day->on == 1){
+		    	$weekly['sun'] = 1;
+		    }
+             break;
+        case "1":
+	    	if($day->on == 1){
+	    		$weekly['mon'] = 1;
+	    	}
+             break;
+        case "2":
+	    	if($day->on == 1){
+	    		$weekly['tue'] = 1;
+	    	}
+             break;
+         case "3":
+	    	if($day->on == 1){
+	    		$weekly['wed'] = 1;
+	    	}
+             break;
+         case "4":
+	    	if($day->on == 1){
+	    		$weekly['thu'] = 1;
+	    	}
+            break;
+         case "5":
+	    	if($day->on == 1){
+	    		$weekly['fri'] = 1;
+	    	}
+            break;
+         case "6":
+	    	if($day->on == 1){
+	    		$weekly['sat'] = 1;
+	    	}
+            break;
+    }
+
+
+
+}
+
+print_r($weekly);die();
+
+	$today =  date("w");
+
+   switch ($today) {
+       case "0":
+           $stoday = 'sun';
+            break;
+       case "1":
+            $stoday = 'mon';
+            break;
+       case "2":
+            $stoday = 'tue';
+            break;
+        case "3":
+            $stoday = 'wed';
+            break;
+        case "4":
+           $stoday = 'thu';
+           break;
+        case "6":
+           $stoday = 'fri';
+           break;
+        case "6":
+           $stoday = 'sat';
+           break;
+   }
+
+    print $stoday;
+	die();
+
+	$node = node_load(42);
+
+	print_r($node);die();
+
+	$image = $node->field_testimage['und'][0]['data'];
+
+	$data = unserialize($image);
+
+	$rawdata = $data['json_base64'];
+
+	print_r($rawdata);
+
+
+
+}
+
+
+
+function geia_get_patients_pt($uid){
+
+	$query = db_select('field_data_field_therapist', 'pt');
+	$query->fields('pt');
+	$query->condition('entity_id',$uid,'=');
+
+	$result = $query->execute();
+
+
+	while($data = $result->fetchAssoc()) {
+
+		$puid = $data['field_therapist_uid'];
+	return $puid;
+    }
+	return;
+
+}
+
+function geia_services_mail($key, &$message, $params) {
+    switch ($key) {
+        case 'posture_data_received':
+            $langcode = $message['language']->language;
+            $message['subject'] = t('Geia: New Posture Images Received');
+            $message['body'][] = t("Hello:  @firstname @lastname has submited images for evalution, please login to http://app.geiafit.com select the patient, and under posted review the images and create a posture report for them. \n\n -geiafit team", array(
+                '@firstname' => $params['firstname'],
+                '@lastname' => $params['lastname'],
+            ), array('langcode' => $langcode));
+            break;
+	        case 'pt_new_message':
+	            $langcode = $message['language']->language;
+	            $message['subject'] = t('Geia: New Message from @firstname @lastname',array(
+	                '@firstname' => $params['firstname'],
+	                '@lastname' => $params['lastname']));
+	            $message['body'][] = t("Hello:  @firstname @lastname sent you a new message. \n\n @message \n\n To Reply please login to http://app.geiafit.com and go to the messages  under the patient. \n\n -geiafit team", array(
+	                '@firstname' => $params['firstname'],
+	                '@lastname' => $params['lastname'],
+					'@message' => $params['message']
+	            ), array('langcode' => $langcode));
+	            break;
+    }
+}
+
+
+
+function _calculate_points_migrate(){
+
+
+	$query = db_select('activity_logs', 'c');
+	$query->fields('c');
+	//$query->condition('c.uid',$uid,'=');
+	$result = $query->execute();
+	$ch = array();
+	$i = 1;
+	while($record = $result->fetchAssoc()) {
+		//formula
+	    $a = 0;
+		$act = 0;
+		//formula
+		$daily_challenge = $record['daily_challenge_goal'] * 10;
+		if($record['total_steps_goal'] > 0){
+			$steps = round(($record['total_steps']/$record['total_steps_goal']) * 100);
+			$act++;
+		}else{
+			$steps = 0;
+		}
+		if($record['time_active_high_goal'] > 0){
+			$high = round(($record['time_active_high']/$record['time_active_high_goal']) * 100);
+			$a++;
+		}else{
+			$high = 0;
+		}
+
+		if($record['time_medium_high_goal'] > 0){
+			$medium = round(($record['time_active_medium']/$record['time_medium_high_goal']) * 100);
+			$a++;
+		}else{
+			$medium = 0;
+		}
+
+		if($record['time_low_high_goal'] > 0){
+			$low = round(($record['time_active_low']/$record['time_low_high_goal']) * 100);
+			$a++;
+		}else{
+			$low = 0;
+		}
+
+
+		if($record['exercise_goal'] > 0){
+			$exercise = round(($record['total_exercise']/$record['exercise_goal']) * 100);
+		}else{
+			$exercise = 0;
+		}
+
+		if($steps > 100){
+			$steps = 100;
+		}
+
+		if($exercise > 100){
+			$exercise = 100;
+		}
+
+		if($low > 100){
+			$low = 100;
+		}
+
+		if($medium > 100){
+			$medium = 100;
+		}
+
+		if($high > 100){
+			$high = 100;
+		}
+		//print $a;die();
+		if($a > 0){
+			$activity = round(($low + $meduim + $high )/$a);
+
+		}else{
+			$activity = 0;
+		}
+
+
+		if($a > 0){
+			$act++;
+		}
+
+		if($act > 0){
+			$total_activity = round(($activity + $steps)/$act);
+		}
+
+
+		$day_points =  $total_activity + $exercise + $daily_challenge;
+
+		$goals = 0;
+
+
+
+		$points = array(
+			'uid' => $record['uid'],
+			'pt_date' => $record['date'],
+			'activity' => $total_activity,
+			'exercises' => $exercise,
+			'daily_challenge' => $daily_challenge,
+			'goals' => $goals,
+			'daily_points' => $day_points,
+			'updated' => time()
+
+		);
+
+		print_r($points);
+
+		$id = 0;
+
+		$date = "'".gmdate("Y-m-d", $record["date"])."'";
+
+		$query = db_select('health_points', 'a');
+		$query->fields('a');
+		$query->condition('a.uid',$record['uid'],'=');
+		$query->where("from_unixtime(pt_date, '%Y-%M-%D') = from_unixtime(:adate, '%Y-%M-%D')", array(':adate' => $record['date']));
+		$cresult = $query->execute();
+
+		while($rdata = $cresult->fetchAssoc()) {
+			$id = $rdata['id'];
+	    }
+
+		if($id == 0){
+			$points['created'] = time();
+		 	$id = db_insert('health_points')
+		 	      ->fields($points)
+		 	      ->execute();
+		}else{
+			$points['updated'] = time();
+			$id = db_update('health_points')
+			      ->fields($points)
+			      ->condition('id',$id,'=')
+			      ->execute();
+
+		}
+
+    }
+
+
+
+
+
+}
+
+
+/**
+ * creates new notification for user accepts array.
+ * data = array
+ * 'uid' => -- required
+ * 'category' => '', -- exercises, goals, prescription, activity, steps, messages, snapshot, alert
+ * 'title' => '',
+ * 'message' => '',
+ * 'image_url' =>'', -- optional
+ * 'read' => 0  -- optional
+ *
+ */
+
+function geia_services_create_notification($data = array()){
+
+	$data['created'] = time();
+	$data['updated'] = time();
+
+	$id = db_insert('geia_notifications')
+	      ->fields($data)
+	      ->execute();
+	       watchdog('new notification for', "UID  = " . $data['uid']);
+
+		   return;
+}
+
+
+
+function geia_services_create_sample_notification($uid){
+
+	$category = array(
+		0 => 'exercises',
+		1 => 'goals',
+		2 => 'prescription',
+		3 => 'activity',
+		4 => 'steps',
+		5 => 'messages',
+		6 => 'snapshot',
+		7 => 'alert'
+	);
+	$z = 0;
+	while($z < 20){
+		$i = rand(0, 7);
+
+		$time = rand(1464811951,1472760754);
+
+
+		$data = array(
+		   'uid' => $uid,
+		   'category' => $category[$i],
+		   'title' => 'Test Title',
+		   'message' => 'Meeting at Renovate America about the new site next Thursday if you want to roll.',
+		   'image_url' =>'',
+		   'created' => $time,
+		   'updated' => $time,
+
+		);
+
+
+
+
+		$id = db_insert('geia_notifications')
+		      ->fields($data)
+		      ->execute();
+		       watchdog('new notification for', "UID  = " . $data['uid']);
+
+			   $z++;
+
+	}
+
+
+
+		   return;
+}
+
+function _migrate_goals(){
+	
+	$query = db_select('users', 'u');
+	$query->fields('u');
+	$result = $query->execute();
+
+	while($users = $result->fetchAssoc()) {
+		$uid = $users['uid'];
+		$user = user_load($uid);
+		$account = profile2_load_by_user($user,'main');
+		if(isset($account->field_goals['und'])){
+			
+		    foreach($account->field_goals['und'] as $goal){
+				
+
+				
+				if('PAIN RELIEF' == $goal['value'] ){
+					$goal['value'] = 'Relieve Pain';
+					
+				}
+				
+				$term = taxonomy_get_term_by_name($goal['value'], 'goals');
+				
+				$tid = key($term);
+				
+				
+				
+				if($tid != ''){
+				
+				if(isset($account->field_outcome_goals['und'])){
+					$goal_array = $account->field_outcome_goals['und'];
+					foreach($account->field_outcome_goals['und'] as $itid){
+						if($itid['tid'] != $tid){
+							$account->field_outcome_goals['und'][]['tid'] = $tid;
+						}
+					}
+				}else{
+					    $account->field_outcome_goals['und'][]['tid'] = $tid;
+				}
+				
+			  }
+			
+				
+		    }
+		    print_r($account->field_outcome_goals);
+			profile2_save($account);
+			
+		}
+	    
+    }
+	
+	
+	
+	
+}
+
